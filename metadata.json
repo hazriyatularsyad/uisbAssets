@@ -1,0 +1,6 @@
+{
+  "name": "AssetGrid",
+  "description": "Sistem Manajemen Aset Kantor - Aplikasi manajemen aset kantor dengan dasbor ringkasan dan fitur CRUD lengkap.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
