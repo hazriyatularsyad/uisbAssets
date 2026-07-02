@@ -1,4 +1,4 @@
-export type AssetCategory = 'Peralatan IT' | 'Furnitur' | 'Alat Tulis Kantor';
+export type AssetCategory = 'Peralatan IT' | 'Furnitur' | 'Alat Tulis Kantor'| 'Kendaraan' | 'Lainnya';
 
 export type AssetStatus = 'Tersedia' | 'Digunakan' | 'Rusak';
 

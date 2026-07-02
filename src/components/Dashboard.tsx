@@ -1,70 +1,95 @@
-import { Box, Wallet, AlertTriangle, ArrowUpRight } from 'lucide-react';
-import { Asset, AssetCategory } from '../types';
-import { formatIDR, formatIDRShort, formatDateID } from '../utils/assetHelpers';
+import { Box, Wallet, AlertTriangle, ArrowUpRight } from "lucide-react"
+import { Asset, AssetCategory } from "../types"
+import { formatIDR, formatIDRShort, formatDateID } from "../utils/assetHelpers"
 
 interface DashboardProps {
-  assets: Asset[];
-  onViewAllAssets: () => void;
+  assets: Asset[]
+  onViewAllAssets: () => void
 }
 
 export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
   // 1. Calculate Stats
-  const totalAssets = assets.length;
-  const totalValue = assets.reduce((sum, asset) => sum + asset.price, 0);
-  
+  const totalAssets = assets.length
+  const totalValue = assets.reduce((sum, asset) => sum + asset.price, 0)
+
   // Critical assets (condition < 50%)
-  const criticalAssets = assets.filter(asset => asset.condition < 50);
-  const criticalAssetsCount = criticalAssets.length;
+  const criticalAssets = assets.filter((asset) => asset.condition < 50)
+  const criticalAssetsCount = criticalAssets.length
 
   // Formatting short & sub values
-  const valueShort = formatIDRShort(totalValue);
+  const valueShort = formatIDRShort(totalValue)
 
-  // 2. Category Distribution
-  const categoryCounts = assets.reduce((acc, asset) => {
-    acc[asset.category] = (acc[asset.category] || 0) + 1;
-    return acc;
-  }, {} as Record<AssetCategory, number>);
+  // 2. Category Distribution (dynamic)
+  const categoryCounts = assets.reduce(
+    (acc, asset) => {
+      const cat = String(asset.category || "Lainnya")
+      acc[cat] = (acc[cat] || 0) + 1
+      return acc
+    },
+    {} as Record<string, number>,
+  )
 
-  const categories: AssetCategory[] = ['Alat Tulis Kantor', 'Furnitur', 'Peralatan IT'];
-  const colors: Record<AssetCategory, string> = {
-    'Alat Tulis Kantor': '#71717a', // zinc-500
-    'Furnitur': '#a1a1aa',          // zinc-400
-    'Peralatan IT': '#ffffff',      // white
-  };
+  // derive unique categories from assets, keep stable order
+  const categories = Array.from(
+    new Set(assets.map((a) => String(a.category || "Lainnya"))),
+  )
 
-  const distribution = categories.map(cat => {
-    const count = categoryCounts[cat] || 0;
-    const percentage = totalAssets > 0 ? Math.round((count / totalAssets) * 100) : 0;
+  // palette to assign colors for categories (expandable)
+  const palette = [
+    "#34d399",
+    "#60a5fa",
+    "#f59e0b",
+    "#ef4444",
+    "#a78bfa",
+    "#f97316",
+    "#94a3b8",
+    "#e5e7eb",
+    "#ffffff",
+  ]
+  const colors: Record<string, string> = {}
+  categories.forEach((c, i) => {
+    colors[c] = palette[i % palette.length]
+  })
+
+  const distribution = categories.map((cat) => {
+    const count = categoryCounts[cat] || 0
+    const percentage =
+      totalAssets > 0 ? Math.round((count / totalAssets) * 100) : 0
     return {
       category: cat,
       count,
       percentage,
-      color: colors[cat],
-    };
-  });
+      color: colors[cat] || "#71717a",
+    }
+  })
 
   // Sort critical assets by condition ascending for maintenance list
   const sortedMaintenance = [...assets]
-    .filter(asset => asset.condition < 50)
+    .filter((asset) => asset.condition < 50)
     .sort((a, b) => a.condition - b.condition)
-    .slice(0, 5);
+    .slice(0, 5)
 
   // SVG Donut Calculations
-  const r = 50;
-  const cx = 80;
-  const cy = 80;
-  const circumference = 2 * Math.PI * r; // ~314.16
+  const r = 50
+  const cx = 80
+  const cy = 80
+  const circumference = 2 * Math.PI * r // ~314.16
 
-  let accumulatedPercentage = 0;
+  let accumulatedPercentage = 0
 
   return (
     <div id="dashboard-view" className="space-y-8 animate-fade-in">
       {/* Header */}
       <div>
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1">/ DASHBOARD</p>
-        <h2 className="font-display text-3xl font-bold tracking-tight text-white md:text-4xl">UISB ASSETS</h2>
+        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1">
+          / DASHBOARD
+        </p>
+        <h2 className="font-display text-3xl font-bold tracking-tight text-white md:text-4xl">
+          UISB ASSETS
+        </h2>
         <p className="mt-2 text-sm text-zinc-400 max-w-2xl leading-relaxed">
-          Pantau kondisi aset kantor Anda secara real-time. Data dihitung otomatis berdasarkan tanggal beli.
+          Pantau kondisi aset kantor Anda secara real-time. Data dihitung
+          otomatis berdasarkan tanggal beli.
         </p>
       </div>
 
@@ -73,11 +98,15 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
         {/* TOTAL ASET */}
         <div className="relative overflow-hidden rounded-none border border-zinc-850 bg-zinc-950 p-6 shadow-xl shadow-black/10">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Aset</span>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              Total Aset
+            </span>
             <Box size={16} className="text-zinc-600" />
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-4xl font-extrabold tracking-tight text-white">{totalAssets}</span>
+            <span className="text-4xl font-extrabold tracking-tight text-white">
+              {totalAssets}
+            </span>
             <span className="text-sm font-medium text-zinc-500">unit</span>
           </div>
           <div className="absolute -bottom-4 -right-4 h-16 w-16 rounded-none bg-zinc-900/10 blur-xl" />
@@ -86,7 +115,9 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
         {/* TOTAL VALUE */}
         <div className="relative overflow-hidden rounded-none border border-zinc-850 bg-zinc-950 p-6 shadow-xl shadow-black/10">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Nilai Aset</span>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              Total Nilai Aset
+            </span>
             <Wallet size={16} className="text-zinc-600" />
           </div>
           <div className="mt-4 flex flex-col">
@@ -94,7 +125,9 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
               {valueShort.value}
             </span>
             {valueShort.sub && (
-              <span className="mt-1 text-xs text-zinc-500 font-mono">{valueShort.sub}</span>
+              <span className="mt-1 text-xs text-zinc-500 font-mono">
+                {valueShort.sub}
+              </span>
             )}
           </div>
           <div className="absolute -bottom-4 -right-4 h-16 w-16 rounded-none bg-zinc-900/10 blur-xl" />
@@ -103,30 +136,42 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
         {/* CRITICAL CONDITION */}
         <div className="relative overflow-hidden rounded-none border border-zinc-850 bg-zinc-950 p-6 shadow-xl shadow-black/10 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Aset Kondisi Kritis</span>
-            <AlertTriangle size={16} className={criticalAssetsCount > 0 ? 'text-red-500 animate-pulse' : 'text-zinc-600'} />
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+              Aset Kondisi Kritis
+            </span>
+            <AlertTriangle
+              size={16}
+              className={
+                criticalAssetsCount > 0
+                  ? "text-red-500 animate-pulse"
+                  : "text-zinc-600"
+              }
+            />
           </div>
           <div className="mt-4 flex items-baseline gap-2">
-            <span className={`text-4xl font-extrabold tracking-tight ${criticalAssetsCount > 0 ? 'text-red-500' : 'text-white'}`}>
+            <span
+              className={`text-4xl font-extrabold tracking-tight ${criticalAssetsCount > 0 ? "text-red-500" : "text-white"}`}
+            >
               {criticalAssetsCount}
             </span>
             <span className="text-sm font-medium text-zinc-500">barang</span>
           </div>
-          <div className="mt-1.5 text-xs text-zinc-500">
-            Kondisi &lt; 50%
-          </div>
+          <div className="mt-1.5 text-xs text-zinc-500">Kondisi &lt; 50%</div>
           <div className="absolute -bottom-4 -right-4 h-16 w-16 rounded-none bg-red-950/10 blur-xl" />
         </div>
       </div>
 
       {/* Visualizations and Lists */}
       <div className="grid gap-6 lg:grid-cols-12">
-        
         {/* Left Side: Distribution Donut Chart */}
         <div className="rounded-none border border-zinc-850 bg-zinc-950/60 p-6 shadow-xl lg:col-span-5 flex flex-col justify-between">
           <div>
-            <h3 className="text-sm font-bold text-white tracking-wider uppercase">Distribusi Aset per Kategori</h3>
-            <p className="text-xs text-zinc-500 mt-1">Perbandingan jumlah aset berdasarkan kategori.</p>
+            <h3 className="text-sm font-bold text-white tracking-wider uppercase">
+              Distribusi Aset per Kategori
+            </h3>
+            <p className="text-xs text-zinc-500 mt-1">
+              Perbandingan jumlah aset berdasarkan kategori.
+            </p>
           </div>
 
           {/* Custom SVG Donut Chart */}
@@ -135,12 +180,13 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
               {totalAssets > 0 ? (
                 <svg viewBox="0 0 160 160" className="h-full w-full -rotate-90">
                   {distribution.map((item) => {
-                    const pct = item.percentage;
-                    if (pct === 0) return null;
+                    const pct = item.percentage
+                    if (pct === 0) return null
 
-                    const strokeDashoffset = circumference - (pct * circumference) / 100;
-                    const rotation = (accumulatedPercentage * 360) / 100;
-                    accumulatedPercentage += pct;
+                    const strokeDashoffset =
+                      circumference - (pct * circumference) / 100
+                    const rotation = (accumulatedPercentage * 360) / 100
+                    accumulatedPercentage += pct
 
                     return (
                       <circle
@@ -154,13 +200,13 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
                         strokeDasharray={circumference}
                         strokeDashoffset={strokeDashoffset}
                         style={{
-                          transformOrigin: 'center',
+                          transformOrigin: "center",
                           transform: `rotate(${rotation}deg)`,
-                          transition: 'stroke-dashoffset 0.5s ease',
+                          transition: "stroke-dashoffset 0.5s ease",
                         }}
                         className="hover:stroke-[24] transition-all duration-200 cursor-pointer"
                       />
-                    );
+                    )
                   })}
                   {/* Inside hole */}
                   <circle cx={cx} cy={cy} r="35" fill="#09090b" />
@@ -172,8 +218,12 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
               )}
               {totalAssets > 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-2xl font-black text-white">{totalAssets}</span>
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total</span>
+                  <span className="text-2xl font-black text-white">
+                    {totalAssets}
+                  </span>
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                    Total
+                  </span>
                 </div>
               )}
             </div>
@@ -182,14 +232,26 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
           {/* Legend */}
           <div className="space-y-2 border-t border-zinc-900 pt-4">
             {distribution.map((item) => (
-              <div key={item.category} className="flex items-center justify-between text-xs">
+              <div
+                key={item.category}
+                className="flex items-center justify-between text-xs"
+              >
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-none" style={{ backgroundColor: item.color }} />
-                  <span className="text-zinc-400 font-medium">{item.category}</span>
+                  <span
+                    className="h-2 w-2 rounded-none"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-zinc-400 font-medium">
+                    {item.category}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-zinc-600 font-mono">{item.count} unit</span>
-                  <span className="text-white font-bold font-mono w-8 text-right">{item.percentage}%</span>
+                  <span className="text-zinc-600 font-mono">
+                    {item.count} unit
+                  </span>
+                  <span className="text-white font-bold font-mono w-8 text-right">
+                    {item.percentage}%
+                  </span>
                 </div>
               </div>
             ))}
@@ -201,8 +263,12 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
           <div>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white tracking-wider uppercase">5 Aset Perlu Perawatan</h3>
-                <p className="text-xs text-zinc-500 mt-1">Diurutkan berdasarkan kondisi terendah.</p>
+                <h3 className="text-sm font-bold text-white tracking-wider uppercase">
+                  5 Aset Perlu Perawatan
+                </h3>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Diurutkan berdasarkan kondisi terendah.
+                </p>
               </div>
               <button
                 id="view-all-maintenance"
@@ -232,8 +298,12 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
                           {asset.id}
                         </td>
                         <td className="py-3.5">
-                          <div className="font-semibold text-white">{asset.name}</div>
-                          <div className="text-[10px] text-zinc-500 mt-0.5">{asset.location}</div>
+                          <div className="font-semibold text-white">
+                            {asset.name}
+                          </div>
+                          <div className="text-[10px] text-zinc-500 mt-0.5">
+                            {asset.location}
+                          </div>
                         </td>
                         <td className="py-3.5 text-zinc-400 hidden sm:table-cell">
                           {formatDateID(asset.purchaseDate)}
@@ -245,10 +315,10 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
                               <div
                                 className={`h-full rounded-none ${
                                   asset.condition < 25
-                                    ? 'bg-red-500'
+                                    ? "bg-red-500"
                                     : asset.condition < 50
-                                    ? 'bg-orange-500'
-                                    : 'bg-yellow-500'
+                                      ? "bg-orange-500"
+                                      : "bg-yellow-500"
                                 }`}
                                 style={{ width: `${asset.condition}%` }}
                               />
@@ -256,10 +326,10 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
                             <span
                               className={`font-bold font-mono text-right w-10 ${
                                 asset.condition < 25
-                                  ? 'text-red-500'
+                                  ? "text-red-500"
                                   : asset.condition < 50
-                                  ? 'text-orange-500'
-                                  : 'text-yellow-500'
+                                    ? "text-orange-500"
+                                    : "text-yellow-500"
                               }`}
                             >
                               {asset.condition}%
@@ -270,7 +340,10 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="py-12 text-center text-zinc-600">
+                      <td
+                        colSpan={4}
+                        className="py-12 text-center text-zinc-600"
+                      >
                         Tidak ada aset dengan kondisi kritis saat ini. Bagus!
                       </td>
                     </tr>
@@ -285,8 +358,7 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
             <span>Update Terakhir: Hari ini</span>
           </div>
         </div>
-
       </div>
     </div>
-  );
+  )
 }

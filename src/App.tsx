@@ -7,16 +7,34 @@ import { Asset } from "./types"
 import { INITIAL_ASSETS } from "./data/mockAssets"
 import { calculateAssetCondition } from "./utils/assetHelpers"
 
-const DEMO_USERNAME = "admin"
-const DEMO_PASSWORD = "123456"
+const API_URL = "http://localhost:4000/api"
+
+const authFetch = (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem("assetgrid_token")
+  return fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  })
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "assets">(
-    "dashboard",
+    () =>
+      (localStorage.getItem("assetgrid_tab") as "dashboard" | "assets") ??
+      "dashboard",
   )
   const [assets, setAssets] = useState<Asset[]>([])
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<string>("")
+
+  useEffect(() => {
+    localStorage.setItem("assetgrid_tab", activeTab)
+  }, [activeTab])
 
   useEffect(() => {
     const savedAuth = localStorage.getItem("assetgrid_auth")
@@ -26,19 +44,35 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const saved = localStorage.getItem("assetgrid_assets")
-    if (saved) {
+    let mounted = true
+    async function load() {
       try {
-        setAssets(JSON.parse(saved))
-      } catch (error) {
-        console.error(
-          "Failed to parse assets from localStorage, loading initial data",
-          error,
-        )
+        const res = await authFetch(`${API_URL}/assets`)
+        const data = await res.json()
+        if (mounted && data.length > 0) {
+          setAssets(data)
+          localStorage.setItem("assetgrid_assets", JSON.stringify(data))
+          return
+        }
+      } catch (err) {
+        console.warn("Gagal load dari PostgreSQL, fallback localStorage", err)
+      }
+
+      const saved = localStorage.getItem("assetgrid_assets")
+      if (saved) {
+        try {
+          setAssets(JSON.parse(saved))
+        } catch {
+          setAssets(INITIAL_ASSETS)
+        }
+      } else {
         setAssets(INITIAL_ASSETS)
       }
-    } else {
-      setAssets(INITIAL_ASSETS)
+    }
+
+    load()
+    return () => {
+      mounted = false
     }
   }, [])
 
@@ -48,74 +82,86 @@ export default function App() {
     }
   }, [assets])
 
-  const getNextAssetId = (currentAssets: Asset[]): string => {
-    if (currentAssets.length === 0) return "AST-0001"
-
-    const ids = currentAssets.map((asset) => {
-      const parts = asset.id.split("-")
-      if (parts.length === 2) {
-        const num = parseInt(parts[1], 10)
-        return Number.isNaN(num) ? 0 : num
-      }
-      return 0
-    })
-
-    const maxId = Math.max(...ids, 0)
-    const nextId = maxId + 1
-    return `AST-${String(nextId).padStart(4, "0")}`
-  }
-
-  const handleAddAsset = (newAssetData: Omit<Asset, "id" | "condition">) => {
-    const nextId = getNextAssetId(assets)
+  const handleAddAsset = async (
+    newAssetData: Omit<Asset, "id" | "condition">,
+  ) => {
     const computedCondition = calculateAssetCondition(
       newAssetData.purchaseDate,
       newAssetData.category,
     )
+    const id = `AST-${String(Date.now()).slice(-6)}`
+    const toSave = { id, ...newAssetData, condition: computedCondition }
 
-    const newAsset: Asset = {
-      ...newAssetData,
-      id: nextId,
-      condition: computedCondition,
+    try {
+      await authFetch(`${API_URL}/assets`, {
+        method: "POST",
+        body: JSON.stringify(toSave),
+      })
+      const updated = [toSave as Asset, ...assets]
+      setAssets(updated)
+      localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
+    } catch (err) {
+      console.error("Gagal tambah ke PostgreSQL", err)
     }
-
-    const updated = [newAsset, ...assets]
-    setAssets(updated)
-    localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
   }
 
-  const handleEditAsset = (updatedAsset: Asset) => {
-    const updated = assets.map((asset) =>
-      asset.id === updatedAsset.id ? updatedAsset : asset,
-    )
-    setAssets(updated)
-    localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
+  const handleEditAsset = async (updatedAsset: Asset) => {
+    try {
+      await authFetch(`${API_URL}/assets/${updatedAsset.id}`, {
+        method: "PUT",
+        body: JSON.stringify(updatedAsset),
+      })
+      const updated = assets.map((a) =>
+        a.id === updatedAsset.id ? updatedAsset : a,
+      )
+      setAssets(updated)
+      localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
+    } catch (err) {
+      console.error("Gagal update ke PostgreSQL", err)
+    }
   }
 
-  const handleDeleteAsset = (id: string) => {
-    const updated = assets.filter((asset) => asset.id !== id)
-    setAssets(updated)
-    localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
+  const handleDeleteAsset = async (id: string) => {
+    try {
+      await authFetch(`${API_URL}/assets/${id}`, { method: "DELETE" })
+      const updated = assets.filter((a) => a.id !== id)
+      setAssets(updated)
+      localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
+    } catch (err) {
+      console.error("Gagal hapus dari PostgreSQL", err)
+    }
   }
 
-  const handleLogin = (username: string, password: string) => {
-    if (
-      username.trim().toLowerCase() === DEMO_USERNAME &&
-      password === DEMO_PASSWORD
-    ) {
-      setIsAuthenticated(true)
-      setAuthError(null)
+  const handleLogin = async (username: string, password: string) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAuthError(data.error || "Username atau password salah.")
+        return false
+      }
+      localStorage.setItem("assetgrid_token", data.token)
       localStorage.setItem("assetgrid_auth", "true")
+      setIsAuthenticated(true)
+      setCurrentUser(data.username)
+      setAuthError(null)
       return true
+    } catch (err) {
+      setAuthError("Gagal menghubungi server.")
+      return false
     }
-
-    setAuthError("Username atau password salah. Coba admin dan 123456.")
-    return false
   }
 
   const handleLogout = () => {
     setIsAuthenticated(false)
+    setCurrentUser("")
     setAuthError(null)
     localStorage.removeItem("assetgrid_auth")
+    localStorage.removeItem("assetgrid_token")
   }
 
   if (!isAuthenticated) {
@@ -130,7 +176,7 @@ export default function App() {
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        userEmail={DEMO_USERNAME}
+        userEmail={currentUser}
         onLogout={handleLogout}
       />
 
