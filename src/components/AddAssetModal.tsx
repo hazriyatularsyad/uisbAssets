@@ -14,7 +14,7 @@ const labelClass =
   "block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5"
 
 interface AddAssetModalProps {
-  onAdd: (asset: Omit<Asset, "id" | "condition">) => void
+  onAdd: (asset: Omit<Asset, "id" | "condition">, receipt?: File | null) => void
   onClose: () => void
 }
 
@@ -29,6 +29,7 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
   const [formLocation, setFormLocation] = useState("")
   const [formStatus, setFormStatus] = useState<AssetStatus>("Tersedia")
   const [formDescription, setFormDescription] = useState("")
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -36,7 +37,8 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
       alert("Harap isi semua kolom wajib!")
       return
     }
-    onAdd({
+    onAdd(
+      {
       name: formName,
       category: formCategory,
       purchaseDate: formPurchaseDate,
@@ -44,7 +46,9 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
       location: formLocation,
       status: formStatus,
       description: formDescription,
-    })
+      },
+      receiptFile,
+    )
     onClose()
   }
 
@@ -150,6 +154,16 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
               className={`${inputClass} resize-none`}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Bukti Pembelian (gambar) *</label>
+            <input
+              type="file"
+              accept="image/*"
+              required
+              onChange={(e) => setReceiptFile(e.target.files ? e.target.files[0] : null)}
+              className={inputClass}
             />
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-zinc-900">

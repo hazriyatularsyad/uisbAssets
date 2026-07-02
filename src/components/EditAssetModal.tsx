@@ -15,7 +15,7 @@ const labelClass =
 
 interface EditAssetModalProps {
   asset: Asset
-  onEdit: (asset: Asset) => void
+  onEdit: (asset: Asset, receipt?: File | null) => void
   onClose: () => void
 }
 
@@ -35,6 +35,7 @@ export default function EditAssetModal({
   const [formDescription, setFormDescription] = useState(
     asset.description || "",
   )
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -46,17 +47,20 @@ export default function EditAssetModal({
       formPurchaseDate,
       formCategory,
     )
-    onEdit({
-      ...asset,
-      name: formName,
-      category: formCategory,
-      purchaseDate: formPurchaseDate,
-      price: Number(formPrice),
-      location: formLocation,
-      status: formStatus,
-      condition: computedCondition,
-      description: formDescription,
-    })
+    onEdit(
+      {
+        ...asset,
+        name: formName,
+        category: formCategory,
+        purchaseDate: formPurchaseDate,
+        price: Number(formPrice),
+        location: formLocation,
+        status: formStatus,
+        condition: computedCondition,
+        description: formDescription,
+      },
+      receiptFile,
+    )
     onClose()
   }
 
@@ -164,6 +168,27 @@ export default function EditAssetModal({
               onChange={(e) => setFormDescription(e.target.value)}
               className={`${inputClass} resize-none`}
             />
+          </div>
+          <div>
+            <label className={labelClass}>
+              Perbarui Bukti Pembelian (gambar)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setReceiptFile(e.target.files ? e.target.files[0] : null)
+              }
+              className={inputClass}
+            />
+            {asset.receipt_url && (
+              <div className="text-xs text-zinc-400 mt-1">
+                Bukti saat ini:{" "}
+                <a href={asset.receipt_url} className="text-white underline">
+                  Lihat
+                </a>
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-zinc-900">
             <button

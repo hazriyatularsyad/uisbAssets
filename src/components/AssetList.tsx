@@ -10,8 +10,12 @@ import ExportPDFModal from "./ExportPDFModal"
 
 interface AssetListProps {
   assets: Asset[]
-  onAddAsset: (asset: Omit<Asset, "id" | "condition">) => void
-  onEditAsset: (asset: Asset) => void
+
+  onAddAsset: (
+    asset: Omit<Asset, "id" | "condition">,
+    receiptFile?: File | null,
+  ) => void
+  onEditAsset: (asset: Asset, receipt?: File | null) => void
   onDeleteAsset: (id: string) => void
 }
 
@@ -103,7 +107,6 @@ export default function AssetList({
           </button>
         </div>
       </div>
-
       <AssetFilters
         searchQuery={searchQuery}
         selectedCategory={selectedCategory}
@@ -112,7 +115,6 @@ export default function AssetList({
         onCategoryChange={setSelectedCategory}
         onStatusChange={setSelectedStatus}
       />
-
       <AssetTable
         assets={filteredAssets}
         totalAssets={assets.length}
@@ -124,9 +126,14 @@ export default function AssetList({
       />
 
       {isAddOpen && (
-        <AddAssetModal onAdd={onAddAsset} onClose={() => setIsAddOpen(false)} />
+        <AddAssetModal
+          onAdd={(asset, file) => {
+            onAddAsset(asset, file)
+            setIsAddOpen(false)
+          }}
+          onClose={() => setIsAddOpen(false)}
+        />
       )}
-
       {editAsset && (
         <EditAssetModal
           asset={editAsset}
@@ -134,7 +141,6 @@ export default function AssetList({
           onClose={() => setEditAsset(null)}
         />
       )}
-
       {deleteAsset && (
         <DeleteAssetModal
           asset={deleteAsset}
@@ -145,7 +151,6 @@ export default function AssetList({
           onClose={() => setDeleteAsset(null)}
         />
       )}
-
       {isPdfOpen && (
         <ExportPDFModal
           assets={filteredAssets}

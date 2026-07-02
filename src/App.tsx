@@ -11,13 +11,15 @@ const API_URL = "http://localhost:4000/api"
 
 const authFetch = (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem("assetgrid_token")
+  const isForm = options.body instanceof FormData
+  const headers: any = {
+    Authorization: `Bearer ${token}`,
+    ...options.headers,
+  }
+  if (!isForm) headers["Content-Type"] = "application/json"
   return fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
+    headers,
   })
 }
 
@@ -84,6 +86,7 @@ export default function App() {
 
   const handleAddAsset = async (
     newAssetData: Omit<Asset, "id" | "condition">,
+    receiptFile?: File | null,
   ) => {
     const computedCondition = calculateAssetCondition(
       newAssetData.purchaseDate,
@@ -93,11 +96,21 @@ export default function App() {
     const toSave = { id, ...newAssetData, condition: computedCondition }
 
     try {
-      await authFetch(`${API_URL}/assets`, {
-        method: "POST",
-        body: JSON.stringify(toSave),
+      const formData = new FormData()
+      Object.entries(toSave).forEach(([key, value]) => {
+        formData.append(key, String(value))
       })
-      const updated = [toSave as Asset, ...assets]
+      if (receiptFile) formData.append("receipt", receiptFile)
+
+      const token = localStorage.getItem("assetgrid_token")
+      const res = await fetch(`${API_URL}/assets`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      })
+      const data = await res.json()
+      const created: Asset = { ...toSave, receipt_url: data.receiptUrl ?? null }
+      const updated = [created, ...assets]
       setAssets(updated)
       localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
     } catch (err) {
@@ -105,14 +118,27 @@ export default function App() {
     }
   }
 
-  const handleEditAsset = async (updatedAsset: Asset) => {
+  const handleEditAsset = async (
+    updatedAsset: Asset,
+    receipt?: File | null,
+  ) => {
     try {
-      await authFetch(`${API_URL}/assets/${updatedAsset.id}`, {
+      const form = new FormData()
+      // append editable fields
+      const fields = { ...updatedAsset }
+      delete (fields as any).id
+      Object.entries(fields).forEach(([k, v]) => form.append(k, v as any))
+      if (receipt) form.append("receipt", receipt)
+
+      const res = await authFetch(`${API_URL}/assets/${updatedAsset.id}`, {
         method: "PUT",
-        body: JSON.stringify(updatedAsset),
+        body: form,
       })
+      const data = await res.json()
       const updated = assets.map((a) =>
-        a.id === updatedAsset.id ? updatedAsset : a,
+        a.id === updatedAsset.id
+          ? { ...updatedAsset, receipt_url: data.receiptUrl || a.receipt_url }
+          : a,
       )
       setAssets(updated)
       localStorage.setItem("assetgrid_assets", JSON.stringify(updated))

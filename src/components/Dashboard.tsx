@@ -10,7 +10,7 @@ interface DashboardProps {
 export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
   // 1. Calculate Stats
   const totalAssets = assets.length
-  const totalValue = assets.reduce((sum, asset) => sum + asset.price, 0)
+  const totalValue = assets.reduce((sum, asset) => sum + Number(asset.price), 0)
 
   // Critical assets (condition < 50%)
   const criticalAssets = assets.filter((asset) => asset.condition < 50)
