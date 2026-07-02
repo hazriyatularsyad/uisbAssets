@@ -11,7 +11,14 @@ import fs from "fs"
 dotenv.config({ path: ".env.local" })
 
 const app = express()
-app.use(cors())
+app.set("trust proxy", true)
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+)
 app.use(express.json())
 
 // const pool = new Pool({
@@ -34,8 +41,15 @@ const pool = new Pool({
 const JWT_SECRET = "uisb_secret_key_2024"
 
 // ensure uploads dir exists
-const uploadsDir = path.resolve(process.cwd(), "uploads")
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir)
+const uploadsDir = path.join(process.cwd(), "uploads")
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true })
+}
+
+console.log("Working Directory :", process.cwd())
+console.log("Uploads Directory :", uploadsDir)
+console.log("Uploads Exists :", fs.existsSync(uploadsDir))
 
 // multer setup
 const storage = multer.diskStorage({
@@ -48,7 +62,37 @@ const storage = multer.diskStorage({
 const upload = multer({ storage })
 
 // serve uploaded files
-app.use("/uploads", express.static(uploadsDir))
+app.use(
+  "/uploads",
+  express.static(uploadsDir, {
+    fallthrough: false,
+  }),
+)
+
+const getPublicReceiptUrl = (req: express.Request, filename: string) => {
+  const host = req.get("host")
+  const protocol = req.protocol
+  return `${protocol}://${host}/uploads/${filename}`
+}
+
+app.get("/health", (_, res) => {
+  res.json({
+    status: "OK",
+    uploads: uploadsDir,
+  })
+})
+
+app.get("/test-image", (_, res) => {
+  const files = fs.readdirSync(uploadsDir)
+
+  if (files.length === 0) {
+    return res.status(404).json({
+      error: "Belum ada file upload",
+    })
+  }
+
+  res.sendFile(path.join(uploadsDir, files[0]))
+})
 
 // ensure receipt_url column exists
 ;(async () => {
@@ -138,18 +182,26 @@ app.use((req, res, next) => {
 app.get("/api/assets", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM assets ORDER BY name ASC")
-    const assets = result.rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      category: row.category,
-      purchaseDate: row.purchase_date,
-      price: row.price,
-      location: row.location,
-      status: row.status,
-      condition: row.condition,
-      receipt_url: row.receipt_url || null,
-      description: row.description,
-    }))
+    const assets = result.rows.map((row) => {
+      const rawReceiptUrl = row.receipt_url || null
+      const receiptUrl = rawReceiptUrl
+        ? rawReceiptUrl.startsWith("http")
+          ? rawReceiptUrl
+          : `${req.protocol}://${req.get("host")}${rawReceiptUrl}`
+        : null
+      return {
+        id: row.id,
+        name: row.name,
+        category: row.category,
+        purchaseDate: row.purchase_date,
+        price: row.price,
+        location: row.location,
+        status: row.status,
+        condition: row.condition,
+        receipt_url: receiptUrl,
+        description: row.description,
+      }
+    })
     res.json(assets)
   } catch (err) {
     res.status(500).json({ error: "Gagal mengambil data" })
@@ -174,7 +226,7 @@ app.post(
         condition,
         description,
       } = req.body
-      const receiptUrl = file ? `/uploads/${file.filename}` : null
+      const receiptUrl = file ? getPublicReceiptUrl(req, file.filename) : null
       await pool.query(
         "INSERT INTO assets (id, name, category, purchase_date, price, location, status, condition, description, receipt_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
         [
@@ -218,7 +270,7 @@ app.put(
       } = req.body
       let receiptUrl = null
       if (file) {
-        receiptUrl = `/uploads/${file.filename}`
+        receiptUrl = getPublicReceiptUrl(req, file.filename)
       }
       const fields = [
         name,
@@ -238,7 +290,6 @@ app.put(
         params.splice(8, 0, receiptUrl)
       }
       query += " WHERE id=$" + params.length
-      // The above is a bit hacky but works for optional receipt
       await pool.query(query, params)
       res.json({ success: true, receiptUrl })
     } catch (err) {

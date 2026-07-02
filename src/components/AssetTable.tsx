@@ -47,13 +47,13 @@ export default function AssetTable({
   const ImageCell = ({ url }: { url?: string | null }) =>
     url ? (
       <a
-        href={`http://localhost:4000${url}`}
+        href={url}
         target="_blank"
         rel="noopener noreferrer"
         className="block w-full h-full"
       >
         <img
-          src={`http://localhost:4000${url}`}
+          src={url}
           alt="Gambar"
           className="w-full h-full object-contain bg-zinc-900 hover:opacity-90 transition-opacity cursor-pointer"
         />
@@ -223,12 +223,12 @@ export default function AssetTable({
                     <td className="py-4 px-4 text-center">
                       {asset.receipt_url ? (
                         <a
-                          href={`http://localhost:4000${asset.receipt_url}`}
+                          href={asset.receipt_url}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
                           <img
-                            src={`http://localhost:4000${asset.receipt_url}`}
+                            src={asset.receipt_url}
                             alt="Bukti"
                             className="h-10 w-10 object-cover border border-zinc-700 hover:scale-110 transition-transform cursor-pointer mx-auto"
                           />
