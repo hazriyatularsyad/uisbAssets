@@ -35,7 +35,7 @@ const pool = new Pool({
   database: "db63a8791421305a54",
   user: "u1dzt7sWX3VNVdsE7.jkt1_006",
   password: "3145a7f02e737a054ffffe6f",
-  ssl: false, // ← wajib 
+  ssl: false, // ← wajib
 })
 
 const JWT_SECRET = "uisb_secret_key_2024"
@@ -172,7 +172,6 @@ app.post("/api/auth/login", async (req, res) => {
 })
 
 // ==================== ASSET ROUTES (dilindungi auth) ====================
-
 
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.originalUrl}`)
