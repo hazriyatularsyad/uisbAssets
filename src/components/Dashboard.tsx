@@ -284,9 +284,9 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
               <table className="w-full text-left text-xs">
                 <thead>
                   <tr className="border-b border-zinc-900 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                    <th className="pb-3 pr-2">Kode Aset</th>
                     <th className="pb-3">Nama Barang</th>
                     <th className="pb-3 hidden sm:table-cell">Tanggal Beli</th>
+                    <th className="pb-3 pr-2">Lokasi</th>
                     <th className="pb-3 text-right">Kondisi</th>
                   </tr>
                 </thead>
@@ -294,19 +294,24 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
                   {sortedMaintenance.length > 0 ? (
                     sortedMaintenance.map((asset) => (
                       <tr key={asset.id} className="group hover:bg-zinc-900/10">
-                        <td className="py-3.5 pr-2 font-mono text-zinc-400 group-hover:text-white transition-colors">
+                        {/* <td className="py-3.5 pr-2 font-mono text-zinc-400 group-hover:text-white transition-colors">
                           {asset.id}
-                        </td>
+                        </td> */}
                         <td className="py-3.5">
                           <div className="font-semibold text-white">
                             {asset.name}
                           </div>
-                          <div className="text-[10px] text-zinc-500 mt-0.5">
-                            {asset.location}
-                          </div>
                         </td>
+                        {/* <div className="text-[10px] text-zinc-500 mt-0.5">
+                            {asset.location}
+                          </div> */}
                         <td className="py-3.5 text-zinc-400 hidden sm:table-cell">
                           {formatDateID(asset.purchaseDate)}
+                        </td>
+                        <td className="py-3.5">
+                          <div className="font-semibold text-white">
+                            {asset.location}
+                          </div>
                         </td>
                         <td className="py-3.5">
                           <div className="flex items-center justify-end gap-3">
