@@ -7,7 +7,7 @@ import { Asset } from "./types"
 
 import { calculateAssetCondition } from "./utils/assetHelpers"
 
-const API_URL = "http://localhost:4000/api"
+const API_URL = "https://uisbassets-production.up.railway.app/api"
 
 const authFetch = (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem("assetgrid_token")

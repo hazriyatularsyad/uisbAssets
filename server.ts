@@ -14,12 +14,21 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+// const pool = new Pool({
+//   host: "localhost",
+//   port: 5432,
+//   database: "uisb_assets",
+//   user: "hazriyatularsyad",
+//   password: "",
+// })
+
 const pool = new Pool({
-  host: "localhost",
-  port: 5432,
-  database: "uisb_assets",
-  user: "hazriyatularsyad",
-  password: "",
+  host: "pgsql-dbas-jkt1-006.sumobase.my.id",
+  port: 6432,
+  database: "db63a8791421305a54",
+  user: "u1dzt7sWX3VNVdsE7.jkt1_006",
+  password: "3145a7f02e737a054ffffe6f",
+  ssl: false, // ← wajib 
 })
 
 const JWT_SECRET = "uisb_secret_key_2024"
