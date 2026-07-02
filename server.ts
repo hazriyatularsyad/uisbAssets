@@ -129,6 +129,12 @@ app.post("/api/auth/login", async (req, res) => {
 
 // ==================== ASSET ROUTES (dilindungi auth) ====================
 
+
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`)
+  next()
+})
+
 app.get("/api/assets", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM assets ORDER BY name ASC")
@@ -252,7 +258,8 @@ app.delete("/api/assets/:id", authMiddleware, async (req, res) => {
   }
 })
 
-const PORT = 4000
-app.listen(PORT, () =>
-  console.log(`✅ Server running at http://localhost:${PORT}`),
-)
+const PORT = Number(process.env.PORT) || 4000
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ Server running on port ${PORT}`)
+})
