@@ -5,6 +5,7 @@ const CATEGORIES: AssetCategory[] = [
   "Peralatan IT",
   "Furnitur",
   "Alat Tulis Kantor",
+  "Lainnya",
 ]
 
 interface AssetFiltersProps {

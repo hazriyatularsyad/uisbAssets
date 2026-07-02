@@ -5,7 +5,8 @@ import { Asset, AssetCategory, AssetStatus } from "../types"
 const CATEGORIES: AssetCategory[] = [
   "Peralatan IT",
   "Furnitur",
-  "Alat Tulis Kantor",
+    "Alat Tulis Kantor",
+  "Lainnya",
 ]
 const inputClass =
   "w-full rounded-none border border-zinc-900 bg-zinc-900/60 px-3 py-2 text-sm text-white outline-none focus:border-zinc-700"
@@ -48,7 +49,7 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 mt-70">
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}

@@ -4,7 +4,7 @@ import Dashboard from "./components/Dashboard"
 import AssetList from "./components/AssetList"
 import Login from "./components/Login"
 import { Asset } from "./types"
-import { INITIAL_ASSETS } from "./data/mockAssets"
+
 import { calculateAssetCondition } from "./utils/assetHelpers"
 
 const API_URL = "http://localhost:4000/api"
@@ -63,10 +63,10 @@ export default function App() {
         try {
           setAssets(JSON.parse(saved))
         } catch {
-          setAssets(INITIAL_ASSETS)
+          setAssets([])
         }
       } else {
-        setAssets(INITIAL_ASSETS)
+        setAssets([])
       }
     }
 
@@ -156,6 +156,26 @@ export default function App() {
     }
   }
 
+  const handleRegister = async (username: string, password: string) => {
+    try {
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAuthError(data.error || "Gagal mendaftar pengguna.")
+        return false
+      }
+      setAuthError("Akun berhasil dibuat. Silakan masuk.")
+      return true
+    } catch (err) {
+      setAuthError("Gagal menghubungi server.")
+      return false
+    }
+  }
+
   const handleLogout = () => {
     setIsAuthenticated(false)
     setCurrentUser("")
@@ -165,7 +185,13 @@ export default function App() {
   }
 
   if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} error={authError} />
+    return (
+      <Login
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+        error={authError}
+      />
+    )
   }
 
   return (

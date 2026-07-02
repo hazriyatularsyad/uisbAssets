@@ -264,7 +264,7 @@ export default function Dashboard({ assets, onViewAllAssets }: DashboardProps) {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-white tracking-wider uppercase">
-                  5 Aset Perlu Perawatan
+                  Aset Perlu Perawatan
                 </h3>
                 <p className="text-xs text-zinc-500 mt-1">
                   Diurutkan berdasarkan kondisi terendah.

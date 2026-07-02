@@ -18,7 +18,7 @@ View your app in AI Studio: https://ai.studio/apps/f7759f38-870d-44e3-b3b6-5bcc5
 3. Run the app:
    `npm run dev`
 
-## Migrate mock data to PostgreSQL (optional)
+## PostgreSQL setup
 
 1. Start a local Postgres (Docker recommended):
 
@@ -26,17 +26,20 @@ View your app in AI Studio: https://ai.studio/apps/f7759f38-870d-44e3-b3b6-5bcc5
 docker run -d --name uisb-postgres -e POSTGRES_USER=hazriyatularsyad -e POSTGRES_PASSWORD=yourpassword -e POSTGRES_DB=uisb_assets -p 5432:5432 postgres:15
 ```
 
-2. Create tables (psql or run the SQL file):
+2. Create tables:
 
 ```bash
-# using psql
 psql -h localhost -U hazriyatularsyad -d uisb_assets -f migrations/create_tables.sql
 ```
 
-3. Run the migration script (uses `tsx`):
+3. Run the backend server:
 
 ```bash
-npx tsx scripts/migrateMockToPostgres.ts
+npx tsx server.ts
 ```
 
-4. Verify data in the database or via the app (ensure `server.ts` is running).
+4. Start the frontend:
+
+```bash
+npm run dev
+```
