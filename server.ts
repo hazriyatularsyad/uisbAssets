@@ -7,6 +7,15 @@ import jwt from "jsonwebtoken"
 import multer from "multer"
 import path from "path"
 import fs from "fs"
+import { v2 as cloudinary } from "cloudinary"
+import { CloudinaryStorage } from "multer-storage-cloudinary"
+
+// Config Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 dotenv.config({ path: ".env.local" })
 
@@ -52,22 +61,22 @@ console.log("Uploads Directory :", uploadsDir)
 console.log("Uploads Exists :", fs.existsSync(uploadsDir))
 
 // multer setup
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const safe = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.\-]/g, "_")}`
-    cb(null, safe)
-  },
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "uisb-assets",
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+  } as any,
 })
 const upload = multer({ storage })
 
 // serve uploaded files
-app.use(
-  "/uploads",
-  express.static(uploadsDir, {
-    fallthrough: false,
-  }),
-)
+// app.use(
+//   "/uploads",
+//   express.static(uploadsDir, {
+//     fallthrough: false,
+//   }),
+// )
 
 const getPublicReceiptUrl = (req: express.Request, filename: string) => {
   const host = req.get("host")
