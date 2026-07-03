@@ -103,13 +103,10 @@ const handleMultipartUpload = (req: express.Request, res: express.Response, next
   })
 }
 
-// serve uploaded files
-app.use(
-  "/uploads",
-  express.static(uploadsDir, {
-    fallthrough: false,
-  }),
-)
+// serve uploaded files (local fallback saat Cloudinary tidak aktif)
+if (!hasCloudinaryConfig) {
+  app.use("/uploads", express.static(uploadsDir, { fallthrough: false }))
+}
 
 const getPublicReceiptUrl = (req: express.Request, file: any) => {
   if (file?.secure_url) return file.secure_url
