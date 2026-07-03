@@ -45,7 +45,11 @@ const pool = new Pool({
   database: "db63a8791421305a54",
   user: "u1dzt7sWX3VNVdsE7.jkt1_006",
   password: "3145a7f02e737a054ffffe6f",
-  ssl: false, // ← wajib
+  ssl: false,
+})
+
+pool.on('error', (err) => {
+  console.error('Unexpected database error:', err)
 })
 
 const JWT_SECRET = "uisb_secret_key_2024"
@@ -384,4 +388,19 @@ const PORT = Number(process.env.PORT) || 4000
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`✅ Server running on port ${PORT}`)
+})
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down...')
+  pool.end().then(() => process.exit(0))
+})
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err)
+  pool.end().then(() => process.exit(1))
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection at:', promise, 'reason:', reason)
 })

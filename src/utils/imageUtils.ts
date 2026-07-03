@@ -1,14 +1,12 @@
-export const normalizeImageUrls = (value: unknown): string[] => {
+export const normalizeImageUrls = (value: any) => {
   if (!value) return []
-  if (Array.isArray(value)) return value.filter((item): item is string => Boolean(item))
+  if (Array.isArray(value)) return value.filter(Boolean)
   if (typeof value === "string") {
     try {
       const parsed = JSON.parse(value)
-      if (Array.isArray(parsed)) {
-        return parsed.filter((item): item is string => Boolean(item))
-      }
+      if (Array.isArray(parsed)) return parsed.filter(Boolean)
     } catch {
-      // ignore invalid JSON and fall back to comma split
+      // ignore
     }
     return value
       .split(",")
