@@ -19,18 +19,19 @@ const parseApiResponse = async (res: Response) => {
   }
 }
 
-const authFetch = (url: string, options: RequestInit = {}) => {
+const authFetch = async (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem("assetgrid_token")
   const isForm = options.body instanceof FormData
   const headers: any = {
-    Authorization: `Bearer ${token}`,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   }
   if (!isForm) headers["Content-Type"] = "application/json"
-  return fetch(url, {
+  const res = await fetch(url, {
     ...options,
     headers,
   })
+  return res
 }
 
 export default function App() {
@@ -60,8 +61,16 @@ export default function App() {
     async function load() {
       try {
         const res = await authFetch(`${API_URL}/assets`)
-        const data = await res.json()
-        if (mounted && data.length > 0) {
+        const data = await parseApiResponse(res)
+        if (!res.ok) {
+          if (res.status === 401) {
+            localStorage.removeItem("assetgrid_token")
+            localStorage.removeItem("assetgrid_auth")
+            setIsAuthenticated(false)
+            return
+          }
+        }
+        if (mounted && Array.isArray(data) && data.length > 0) {
           setAssets(data)
           localStorage.setItem("assetgrid_assets", JSON.stringify(data))
           return
@@ -117,7 +126,7 @@ export default function App() {
       const token = localStorage.getItem("assetgrid_token")
       const res = await fetch(`${API_URL}/assets`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       })
       const data = await parseApiResponse(res)
