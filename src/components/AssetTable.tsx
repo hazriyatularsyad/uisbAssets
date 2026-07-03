@@ -1,4 +1,5 @@
-import { Edit2, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit2, Trash2 } from "lucide-react"
+import { useState } from "react"
 import { Asset } from "../types"
 import { formatIDR, formatDateID } from "../utils/assetHelpers"
 
@@ -44,25 +45,87 @@ export default function AssetTable({
     return "bg-red-500"
   }
 
-  const ImageCell = ({ url }: { url?: string | null }) =>
-    url ? (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block w-full h-full"
-      >
-        <img
-          src={url}
-          alt="Gambar"
-          className="w-full h-full object-contain bg-zinc-900 hover:opacity-90 transition-opacity cursor-pointer"
-        />
-      </a>
-    ) : (
-      <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-600 text-[10px]">
-        Tidak ada gambar
+  const AssetImageCarousel = ({
+    asset,
+    compact = false,
+  }: {
+    asset: Asset
+    compact?: boolean
+  }) => {
+    const imageUrls =
+      asset.images && asset.images.length > 0
+        ? asset.images
+        : asset.receipt_url
+          ? [asset.receipt_url]
+          : []
+
+    const [activeIndex, setActiveIndex] = useState(0)
+
+    if (imageUrls.length === 0) {
+      return (
+        <div className="flex h-full min-h-24 w-full items-center justify-center bg-zinc-900 text-[10px] text-zinc-600">
+          Tidak ada gambar
+        </div>
+      )
+    }
+
+    const currentUrl = imageUrls[activeIndex]
+
+    return (
+      <div className="w-full">
+        <div className={`relative overflow-hidden bg-zinc-900 ${compact ? "h-16 w-16" : "h-48 w-full"}`}>
+          <a href={currentUrl} target="_blank" rel="noopener noreferrer">
+            <img
+              src={currentUrl}
+              alt={`Gambar aset ${asset.name}`}
+              className={`w-full object-cover transition-opacity hover:opacity-90 ${compact ? "h-16" : "h-48"}`}
+            />
+          </a>
+
+          {imageUrls.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveIndex((prev) =>
+                    prev === 0 ? imageUrls.length - 1 : prev - 1,
+                  )
+                }
+                className="absolute left-1 top-1/2 -translate-y-1/2 rounded-none bg-black/70 p-1 text-white"
+              >
+                <ChevronLeft size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveIndex((prev) => (prev + 1) % imageUrls.length)
+                }
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-none bg-black/70 p-1 text-white"
+              >
+                <ChevronRight size={12} />
+              </button>
+              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-none bg-black/70 px-2 py-0.5 text-[9px] font-semibold text-white">
+                {activeIndex + 1}/{imageUrls.length}
+              </div>
+            </>
+          )}
+        </div>
+
+        {imageUrls.length > 1 && (
+          <div className="mt-2 flex flex-wrap justify-center gap-1">
+            {imageUrls.map((img, index) => (
+              <button
+                key={`${asset.id}-${img}`}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                className={`h-2 w-2 rounded-full ${index === activeIndex ? "bg-white" : "bg-zinc-700"}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     )
+  }
 
   return (
     <>
@@ -75,8 +138,8 @@ export default function AssetTable({
               className="border border-zinc-800 bg-zinc-950/60"
             >
               {/* Gambar paling atas */}
-              <div className="w-full sm:h-80 bg-zinc-900 border-b border-zinc-800 overflow-hidden">
-                <ImageCell url={asset.receipt_url} />
+              <div className="w-full border-b border-zinc-800 bg-zinc-900 p-3 sm:h-80">
+                <AssetImageCarousel asset={asset} />
               </div>
 
               {/* Konten card */}
@@ -221,21 +284,9 @@ export default function AssetTable({
                       {index + 1}
                     </td>
                     <td className="py-4 px-4 text-center">
-                      {asset.receipt_url ? (
-                        <a
-                          href={asset.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <img
-                            src={asset.receipt_url}
-                            alt="Bukti"
-                            className="h-10 w-10 object-cover border border-zinc-700 hover:scale-110 transition-transform cursor-pointer mx-auto"
-                          />
-                        </a>
-                      ) : (
-                        <span className="text-zinc-600 text-[10px]">—</span>
-                      )}
+                      <div className="mx-auto flex justify-center">
+                        <AssetImageCarousel asset={asset} compact />
+                      </div>
                     </td>
                     <td className="py-4 px-4">
                       <div className="font-semibold text-white">

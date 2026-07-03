@@ -1,11 +1,12 @@
-import { X } from "lucide-react"
-import { useState, FormEvent } from "react"
+import { X, Upload, ImageIcon } from "lucide-react"
+import { useState, FormEvent, useRef } from "react"
 import { Asset, AssetCategory, AssetStatus } from "../types"
 
 const CATEGORIES: AssetCategory[] = [
   "Peralatan IT",
   "Furnitur",
-    "Alat Tulis Kantor",
+  "Alat Tulis Kantor",
+  "Kendaraan",
   "Lainnya",
 ]
 const inputClass =
@@ -14,7 +15,7 @@ const labelClass =
   "block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5"
 
 interface AddAssetModalProps {
-  onAdd: (asset: Omit<Asset, "id" | "condition">, receipt?: File | null) => void
+  onAdd: (asset: Omit<Asset, "id" | "condition">, receiptFiles?: File[]) => void
   onClose: () => void
 }
 
@@ -29,7 +30,37 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
   const [formLocation, setFormLocation] = useState("")
   const [formStatus, setFormStatus] = useState<AssetStatus>("Tersedia")
   const [formDescription, setFormDescription] = useState("")
-  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptFiles, setReceiptFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      const newFiles = Array.from(files)
+      const validFiles = newFiles.filter((file) => file.type.startsWith("image/"))
+      
+      if (validFiles.length > 0) {
+        setReceiptFiles((prev) => [...prev, ...validFiles])
+        
+        const previews = validFiles.map((file) => URL.createObjectURL(file))
+        setImagePreviews((prev) => [...prev, ...previews])
+      }
+    }
+  }
+
+  const removeFile = (index: number) => {
+    const newFiles = [...receiptFiles]
+    newFiles.splice(index, 1)
+    setReceiptFiles(newFiles)
+    
+    const preview = imagePreviews[index]
+    if (preview) URL.revokeObjectURL(preview)
+    
+    const newPreviews = [...imagePreviews]
+    newPreviews.splice(index, 1)
+    setImagePreviews(newPreviews)
+  }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -39,15 +70,15 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
     }
     onAdd(
       {
-      name: formName,
-      category: formCategory,
-      purchaseDate: formPurchaseDate,
-      price: Number(formPrice),
-      location: formLocation,
-      status: formStatus,
-      description: formDescription,
+        name: formName,
+        category: formCategory,
+        purchaseDate: formPurchaseDate,
+        price: Number(formPrice),
+        location: formLocation,
+        status: formStatus,
+        description: formDescription,
       },
-      receiptFile,
+      receiptFiles.length > 0 ? receiptFiles : undefined,
     )
     onClose()
   }
@@ -159,12 +190,40 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
           <div>
             <label className={labelClass}>Bukti Pembelian (gambar) *</label>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
-              required
-              onChange={(e) => setReceiptFile(e.target.files ? e.target.files[0] : null)}
+              multiple
+              onChange={handleFileChange}
               className={inputClass}
             />
+            <p className="text-[10px] text-zinc-500 mt-1">
+              Anda dapat memilih beberapa gambar sekaligus
+            </p>
+            
+            {imagePreviews.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-24 object-cover border border-zinc-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="absolute top-1 right-1 bg-red-600 text-white rounded-none p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] px-1 py-0.5 truncate">
+                      {receiptFiles[index]?.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-zinc-900">
             <button

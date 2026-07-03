@@ -1,5 +1,5 @@
 import { X } from "lucide-react"
-import { useState, FormEvent } from "react"
+import { useState, FormEvent, useRef } from "react"
 import { Asset, AssetCategory, AssetStatus } from "../types"
 import { calculateAssetCondition } from "../utils/assetHelpers"
 
@@ -7,6 +7,8 @@ const CATEGORIES: AssetCategory[] = [
   "Peralatan IT",
   "Furnitur",
   "Alat Tulis Kantor",
+  "Kendaraan",
+  "Lainnya",
 ]
 const inputClass =
   "w-full rounded-none border border-zinc-900 bg-zinc-900/60 px-3 py-2 text-sm text-white outline-none focus:border-zinc-700"
@@ -15,7 +17,7 @@ const labelClass =
 
 interface EditAssetModalProps {
   asset: Asset
-  onEdit: (asset: Asset, receipt?: File | null) => void
+  onEdit: (asset: Asset, receiptFiles?: File[]) => void
   onClose: () => void
 }
 
@@ -35,7 +37,44 @@ export default function EditAssetModal({
   const [formDescription, setFormDescription] = useState(
     asset.description || "",
   )
-  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptFiles, setReceiptFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [existingImages, setExistingImages] = useState<string[]>(asset.images || [])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      const newFiles = Array.from(files)
+      const validFiles = newFiles.filter((file) => file.type.startsWith("image/"))
+      
+      if (validFiles.length > 0) {
+        setReceiptFiles((prev) => [...prev, ...validFiles])
+        
+        const previews = validFiles.map((file) => URL.createObjectURL(file))
+        setImagePreviews((prev) => [...prev, ...previews])
+      }
+    }
+  }
+
+  const removeFile = (index: number) => {
+    const newFiles = [...receiptFiles]
+    newFiles.splice(index, 1)
+    setReceiptFiles(newFiles)
+    
+    const preview = imagePreviews[index]
+    if (preview) URL.revokeObjectURL(preview)
+    
+    const newPreviews = [...imagePreviews]
+    newPreviews.splice(index, 1)
+    setImagePreviews(newPreviews)
+  }
+
+  const removeExistingImage = (index: number) => {
+    const newImages = [...existingImages]
+    newImages.splice(index, 1)
+    setExistingImages(newImages)
+  }
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -58,8 +97,9 @@ export default function EditAssetModal({
         status: formStatus,
         condition: computedCondition,
         description: formDescription,
+        images: existingImages,
       },
-      receiptFile,
+      receiptFiles.length > 0 ? receiptFiles : undefined,
     )
     onClose()
   }
@@ -174,19 +214,64 @@ export default function EditAssetModal({
               Perbarui Bukti Pembelian (gambar)
             </label>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
-              onChange={(e) =>
-                setReceiptFile(e.target.files ? e.target.files[0] : null)
-              }
+              multiple
+              onChange={handleFileChange}
               className={inputClass}
             />
-            {asset.receipt_url && (
-              <div className="text-xs text-zinc-400 mt-1">
-                Bukti saat ini:{" "}
-                <a href={asset.receipt_url} className="text-white underline">
-                  Lihat
-                </a>
+            <p className="text-[10px] text-zinc-500 mt-1">
+              Anda dapat memilih beberapa gambar sekaligus
+            </p>
+
+            {imagePreviews.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-24 object-cover border border-zinc-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="absolute top-1 right-1 bg-red-600 text-white rounded-none p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={12} />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[9px] px-1 py-0.5 truncate">
+                      {receiptFiles[index]?.name}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {asset.images && asset.images.length > 0 && (
+              <div className="mt-3">
+                <p className="text-[10px] text-zinc-500 mb-2 uppercase tracking-wider">
+                  Gambar Saat Ini
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {asset.images.map((img, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={img}
+                        alt={`Existing ${index + 1}`}
+                        className="w-full h-24 object-cover border border-zinc-800"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeExistingImage(index)}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-none p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

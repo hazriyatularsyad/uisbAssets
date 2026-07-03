@@ -9,6 +9,16 @@ import { calculateAssetCondition } from "./utils/assetHelpers"
 
 const API_URL = "https://uisbassets-production.up.railway.app/api"
 
+const parseApiResponse = async (res: Response) => {
+  const text = await res.text()
+  if (!text) return {}
+  try {
+    return JSON.parse(text)
+  } catch {
+    return { error: text }
+  }
+}
+
 const authFetch = (url: string, options: RequestInit = {}) => {
   const token = localStorage.getItem("assetgrid_token")
   const isForm = options.body instanceof FormData
@@ -86,7 +96,7 @@ export default function App() {
 
   const handleAddAsset = async (
     newAssetData: Omit<Asset, "id" | "condition">,
-    receiptFile?: File | null,
+    receiptFiles?: File[] | null,
   ) => {
     const computedCondition = calculateAssetCondition(
       newAssetData.purchaseDate,
@@ -100,7 +110,9 @@ export default function App() {
       Object.entries(toSave).forEach(([key, value]) => {
         formData.append(key, String(value))
       })
-      if (receiptFile) formData.append("receipt", receiptFile)
+      if (receiptFiles && receiptFiles.length > 0) {
+        receiptFiles.forEach((file) => formData.append("receipt", file))
+      }
 
       const token = localStorage.getItem("assetgrid_token")
       const res = await fetch(`${API_URL}/assets`, {
@@ -108,8 +120,15 @@ export default function App() {
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       })
-      const data = await res.json()
-      const created: Asset = { ...toSave, receipt_url: data.receiptUrl ?? null }
+      const data = await parseApiResponse(res)
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal menambah aset")
+      }
+      const created: Asset = {
+        ...toSave,
+        receipt_url: data.receiptUrl ?? null,
+        images: data.images ?? (data.receiptUrl ? [data.receiptUrl] : []),
+      }
       const updated = [created, ...assets]
       setAssets(updated)
       localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
@@ -120,24 +139,41 @@ export default function App() {
 
   const handleEditAsset = async (
     updatedAsset: Asset,
-    receipt?: File | null,
+    receiptFiles?: File[] | null,
   ) => {
     try {
       const form = new FormData()
       // append editable fields
       const fields = { ...updatedAsset }
       delete (fields as any).id
-      Object.entries(fields).forEach(([k, v]) => form.append(k, v as any))
-      if (receipt) form.append("receipt", receipt)
+      Object.entries(fields).forEach(([k, v]) => {
+        if (k === "images") {
+          form.append("images", JSON.stringify(v ?? []))
+        } else if (Array.isArray(v)) {
+          form.append(k, JSON.stringify(v))
+        } else {
+          form.append(k, v as any)
+        }
+      })
+      if (receiptFiles && receiptFiles.length > 0) {
+        receiptFiles.forEach((file) => form.append("receipt", file))
+      }
 
       const res = await authFetch(`${API_URL}/assets/${updatedAsset.id}`, {
         method: "PUT",
         body: form,
       })
-      const data = await res.json()
+      const data = await parseApiResponse(res)
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal memperbarui aset")
+      }
       const updated = assets.map((a) =>
         a.id === updatedAsset.id
-          ? { ...updatedAsset, receipt_url: data.receiptUrl || a.receipt_url }
+          ? {
+              ...updatedAsset,
+              receipt_url: data.receiptUrl || a.receipt_url,
+              images: data.images ?? updatedAsset.images ?? a.images ?? [],
+            }
           : a,
       )
       setAssets(updated)

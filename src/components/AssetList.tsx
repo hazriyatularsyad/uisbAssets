@@ -13,9 +13,9 @@ interface AssetListProps {
 
   onAddAsset: (
     asset: Omit<Asset, "id" | "condition">,
-    receiptFile?: File | null,
+    receiptFiles?: File[] | null,
   ) => void
-  onEditAsset: (asset: Asset, receipt?: File | null) => void
+  onEditAsset: (asset: Asset, receiptFiles?: File[] | null) => void
   onDeleteAsset: (id: string) => void
 }
 

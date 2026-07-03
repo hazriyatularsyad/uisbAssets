@@ -9,6 +9,9 @@ import path from "path"
 import fs from "fs"
 import { v2 as cloudinary } from "cloudinary"
 import { CloudinaryStorage } from "multer-storage-cloudinary"
+import { buildReceiptValue, normalizeImageUrls } from "./src/utils/imageUtils"
+
+dotenv.config({ path: ".env.local" })
 
 // Config Cloudinary
 cloudinary.config({
@@ -16,8 +19,6 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
-
-dotenv.config({ path: ".env.local" })
 
 const app = express()
 app.set("trust proxy", true)
@@ -61,27 +62,67 @@ console.log("Uploads Directory :", uploadsDir)
 console.log("Uploads Exists :", fs.existsSync(uploadsDir))
 
 // multer setup
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "uisb-assets",
-    allowed_formats: ["jpg", "jpeg", "png", "webp"],
-  } as any,
+const hasCloudinaryConfig = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET,
+)
+
+const storage = hasCloudinaryConfig
+  ? new CloudinaryStorage({
+      cloudinary,
+      params: {
+        folder: "uisb-assets",
+        allowed_formats: ["jpg", "jpeg", "png", "webp"],
+      } as any,
+    })
+  : multer.diskStorage({
+      destination: uploadsDir,
+      filename: (_req, file, cb) => {
+        const ext = path.extname(file.originalname || "")
+        const base = path.basename(file.originalname || "file", ext)
+        cb(null, `${Date.now()}-${base}${ext}`)
+      },
+    })
+
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+    files: 10,
+  },
 })
-const upload = multer({ storage })
+
+const handleMultipartUpload = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  upload.any()(req, res, (err) => {
+    if (err) {
+      console.error("Multer upload error:", err)
+      return res.status(400).json({ error: err.message || "Upload gagal" })
+    }
+    next()
+  })
+}
 
 // serve uploaded files
-// app.use(
-//   "/uploads",
-//   express.static(uploadsDir, {
-//     fallthrough: false,
-//   }),
-// )
+app.use(
+  "/uploads",
+  express.static(uploadsDir, {
+    fallthrough: false,
+  }),
+)
 
-const getPublicReceiptUrl = (req: express.Request, filename: string) => {
+const getPublicReceiptUrl = (req: express.Request, file: any) => {
+  if (file?.secure_url) return file.secure_url
+  if (typeof file?.path === "string") {
+    if (file.path.startsWith("http")) return file.path
+    const filename = path.basename(file.path)
+    const host = req.get("host")
+    const protocol = req.protocol
+    return `${protocol}://${host}/uploads/${filename}`
+  }
   const host = req.get("host")
   const protocol = req.protocol
-  return `${protocol}://${host}/uploads/${filename}`
+  return `${protocol}://${host}/uploads/${file?.filename || "file"}`
 }
 
 app.get("/health", (_, res) => {
@@ -103,14 +144,27 @@ app.get("/test-image", (_, res) => {
   res.sendFile(path.join(uploadsDir, files[0]))
 })
 
-// ensure receipt_url column exists
+// ensure asset schema exists for upload metadata
 ;(async () => {
   try {
     await pool.query(
       "ALTER TABLE assets ADD COLUMN IF NOT EXISTS receipt_url TEXT",
     )
+    await pool.query(
+      "ALTER TABLE assets ADD COLUMN IF NOT EXISTS images JSONB",
+    )
+    await pool.query(`
+      UPDATE assets
+      SET images = CASE
+        WHEN receipt_url IS NULL THEN '[]'::jsonb
+        WHEN receipt_url LIKE '[' THEN receipt_url::jsonb
+        ELSE jsonb_build_array(receipt_url)
+      END
+      WHERE images IS NULL
+    `)
+    console.log("✅ Asset schema migration completed")
   } catch (err) {
-    console.warn("Failed to ensure receipt_url column:", err)
+    console.warn("Failed to ensure asset schema:", err)
   }
 })()
 
@@ -191,12 +245,8 @@ app.get("/api/assets", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM assets ORDER BY name ASC")
     const assets = result.rows.map((row) => {
-      const rawReceiptUrl = row.receipt_url || null
-      const receiptUrl = rawReceiptUrl
-        ? rawReceiptUrl.startsWith("http")
-          ? rawReceiptUrl
-          : `${req.protocol}://${req.get("host")}${rawReceiptUrl}`
-        : null
+      const imageUrls = normalizeImageUrls(row.images ?? row.receipt_url)
+      const receiptUrl = imageUrls[0] || null
       return {
         id: row.id,
         name: row.name,
@@ -207,6 +257,7 @@ app.get("/api/assets", authMiddleware, async (req, res) => {
         status: row.status,
         condition: row.condition,
         receipt_url: receiptUrl,
+        images: imageUrls,
         description: row.description,
       }
     })
@@ -219,10 +270,14 @@ app.get("/api/assets", authMiddleware, async (req, res) => {
 app.post(
   "/api/assets",
   authMiddleware,
-  upload.single("receipt"),
+  handleMultipartUpload,
   async (req, res) => {
     try {
-      const file = req.file
+      const files = Array.isArray((req as any).files)
+        ? (((req as any).files as Express.Multer.File[]).filter((file) =>
+            file?.mimetype?.startsWith("image/"),
+          ))
+        : []
       const {
         id,
         name,
@@ -234,9 +289,11 @@ app.post(
         condition,
         description,
       } = req.body
-      const receiptUrl = file ? getPublicReceiptUrl(req, file.filename) : null
+      const uploadedUrls = files.map((file) => getPublicReceiptUrl(req, file))
+      const imageUrls = uploadedUrls.length > 0 ? uploadedUrls : []
+      const receiptValue = buildReceiptValue(imageUrls)
       await pool.query(
-        "INSERT INTO assets (id, name, category, purchase_date, price, location, status, condition, description, receipt_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+        "INSERT INTO assets (id, name, category, purchase_date, price, location, status, condition, description, receipt_url, images) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
         [
           id,
           name,
@@ -247,10 +304,11 @@ app.post(
           status,
           condition,
           description,
-          receiptUrl,
+          receiptValue,
+          JSON.stringify(imageUrls),
         ],
       )
-      res.json({ id, receiptUrl })
+      res.json({ id, receiptUrl: imageUrls[0] || null, images: imageUrls })
     } catch (err) {
       console.error(err)
       res.status(500).json({ error: "Gagal menambah aset" })
@@ -261,11 +319,15 @@ app.post(
 app.put(
   "/api/assets/:id",
   authMiddleware,
-  upload.single("receipt"),
+  handleMultipartUpload,
   async (req, res) => {
     try {
       const { id } = req.params
-      const file = req.file
+      const files = Array.isArray((req as any).files)
+        ? (((req as any).files as Express.Multer.File[]).filter((file) =>
+            file?.mimetype?.startsWith("image/"),
+          ))
+        : []
       const {
         name,
         category,
@@ -275,11 +337,12 @@ app.put(
         status,
         condition,
         description,
+        images,
       } = req.body
-      let receiptUrl = null
-      if (file) {
-        receiptUrl = getPublicReceiptUrl(req, file.filename)
-      }
+      const existingImages = normalizeImageUrls(images)
+      const uploadedUrls = files.map((file) => getPublicReceiptUrl(req, file))
+      const finalImages = uploadedUrls.length > 0 ? uploadedUrls : existingImages
+      const receiptValue = buildReceiptValue(finalImages)
       const fields = [
         name,
         category,
@@ -293,13 +356,16 @@ app.put(
       let query =
         "UPDATE assets SET name=$1, category=$2, purchase_date=$3, price=$4, location=$5, status=$6, condition=$7, description=$8"
       const params: any[] = [...fields, id]
-      if (receiptUrl) {
-        query += ", receipt_url=$9"
-        params.splice(8, 0, receiptUrl)
+      if (receiptValue) {
+        query += ", receipt_url=$9, images=$10"
+        params.splice(8, 0, receiptValue, JSON.stringify(finalImages))
+      } else {
+        query += ", images=$9"
+        params.splice(8, 0, JSON.stringify(finalImages))
       }
       query += " WHERE id=$" + params.length
       await pool.query(query, params)
-      res.json({ success: true, receiptUrl })
+      res.json({ success: true, receiptUrl: finalImages[0] || null, images: finalImages })
     } catch (err) {
       console.error(err)
       res.status(500).json({ error: "Gagal update aset" })

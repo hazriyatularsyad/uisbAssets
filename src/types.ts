@@ -18,6 +18,7 @@ export interface Asset {
   condition: number // 0 - 100, calculated or specified
   description?: string
   receipt_url?: string | null
+  images?: string[]
 }
 
 export interface DashboardStats {

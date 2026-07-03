@@ -42,7 +42,7 @@ export default function AssetFilters({
       </div>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center justify-between pt-2">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+          <span className="text-[10px] font-bold text-white uppercase tracking-widest">
             Kategori:
           </span>
           <div className="flex flex-wrap gap-1.5">
@@ -62,7 +62,7 @@ export default function AssetFilters({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+          <span className="text-[10px] font-bold text-white uppercase tracking-widest">
             Status:
           </span>
           <div className="flex flex-wrap gap-1.5">
