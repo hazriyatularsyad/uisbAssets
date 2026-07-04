@@ -6,8 +6,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  UserPlus,
 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, FormEvent } from "react"
 
 const LOGO_SRC = "/image/uisbLogo.png"
 const LOGO_ALT = "Universitas Islam Sumatera Barat"
@@ -17,6 +18,7 @@ interface SidebarProps {
   setActiveTab: (tab: "dashboard" | "assets") => void
   userEmail?: string
   onLogout?: () => void
+  onRegister?: (username: string, password: string) => Promise<string>
 }
 
 export default function Sidebar({
@@ -24,11 +26,20 @@ export default function Sidebar({
   setActiveTab,
   userEmail = "admin@office",
   onLogout,
+  onRegister,
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(() => {
     return localStorage.getItem("sidebar_collapsed") === "true"
   })
+
+  const [showRegisterModal, setShowRegisterModal] = useState(false)
+  const [regUsername, setRegUsername] = useState("")
+  const [regPassword, setRegPassword] = useState("")
+  const [regPasswordConfirm, setRegPasswordConfirm] = useState("")
+  const [regLoading, setRegLoading] = useState(false)
+  const [regError, setRegError] = useState<string | null>(null)
+  const [regSuccess, setRegSuccess] = useState<string | null>(null)
 
   useEffect(() => {
     localStorage.setItem("sidebar_collapsed", String(isCollapsed))
@@ -55,6 +66,41 @@ export default function Sidebar({
   const initials = userEmail
     ? userEmail.split("@")[0].slice(0, 2).toUpperCase()
     : "AD"
+
+  const handleRegisterSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setRegError(null)
+    setRegSuccess(null)
+
+    if (regPassword !== regPasswordConfirm) {
+      setRegError("Password dan konfirmasi password tidak cocok.")
+      return
+    }
+
+    if (!onRegister) return
+
+    setRegLoading(true)
+    const result = await onRegister(regUsername, regPassword)
+    setRegLoading(false)
+
+    if (result) {
+      setRegError(result)
+    } else {
+      setRegSuccess("Akun berhasil dibuat.")
+      setRegUsername("")
+      setRegPassword("")
+      setRegPasswordConfirm("")
+    }
+  }
+
+  const closeRegisterModal = () => {
+    setShowRegisterModal(false)
+    setRegError(null)
+    setRegSuccess(null)
+    setRegUsername("")
+    setRegPassword("")
+    setRegPasswordConfirm("")
+  }
 
   return (
     <>
@@ -212,10 +258,23 @@ export default function Sidebar({
             )}
           </div>
 
+          {/* Buat Akun Button */}
+          <button
+            type="button"
+            onClick={() => setShowRegisterModal(true)}
+            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white ${
+              isCollapsed ? "px-2 py-2" : ""
+            }`}
+            title={isCollapsed ? "Buat Akun Baru" : undefined}
+          >
+            <UserPlus size={16} />
+            {!isCollapsed && <span>Buat Akun Baru</span>}
+          </button>
+
           <button
             type="button"
             onClick={onLogout}
-            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white ${
+            className={`mt-1 flex w-full items-center justify-center gap-2 rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white ${
               isCollapsed ? "px-2 py-2" : ""
             }`}
           >
@@ -224,6 +283,101 @@ export default function Sidebar({
           </button>
         </div>
       </aside>
+
+      {/* Register Modal */}
+      {showRegisterModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          onClick={closeRegisterModal}
+        >
+          <div
+            className="w-full max-w-md border border-zinc-800 bg-zinc-950 p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Buat Akun Baru</h2>
+              <button
+                type="button"
+                onClick={closeRegisterModal}
+                className="text-zinc-500 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div>
+                <label
+                  className="mb-2 block text-sm font-semibold text-zinc-400"
+                  htmlFor="reg-username"
+                >
+                  Username
+                </label>
+                <input
+                  id="reg-username"
+                  type="text"
+                  value={regUsername}
+                  onChange={(e) => setRegUsername(e.target.value)}
+                  className="w-full border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-zinc-500"
+                  placeholder="Masukkan username"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  className="mb-2 block text-sm font-semibold text-zinc-400"
+                  htmlFor="reg-password"
+                >
+                  Password
+                </label>
+                <input
+                  id="reg-password"
+                  type="password"
+                  value={regPassword}
+                  onChange={(e) => setRegPassword(e.target.value)}
+                  className="w-full border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-zinc-500"
+                  placeholder="Masukkan password"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  className="mb-2 block text-sm font-semibold text-zinc-400"
+                  htmlFor="reg-password-confirm"
+                >
+                  Konfirmasi Password
+                </label>
+                <input
+                  id="reg-password-confirm"
+                  type="password"
+                  value={regPasswordConfirm}
+                  onChange={(e) => setRegPasswordConfirm(e.target.value)}
+                  className="w-full border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-zinc-500"
+                  placeholder="Ketik ulang password"
+                  required
+                />
+              </div>
+
+              {regError && (
+                <p className="text-sm text-red-500">{regError}</p>
+              )}
+              {regSuccess && (
+                <p className="text-sm text-emerald-500">{regSuccess}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={regLoading}
+                className="w-full border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:opacity-50"
+              >
+                {regLoading ? "Mendaftarkan..." : "Daftar"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   )
 }

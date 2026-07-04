@@ -227,7 +227,7 @@ export default function App() {
     }
   }
 
-  const handleRegister = async (username: string, password: string) => {
+  const handleRegister = async (username: string, password: string): Promise<string> => {
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
@@ -236,14 +236,11 @@ export default function App() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setAuthError(data.error || "Gagal mendaftar pengguna.")
-        return false
+        return data.error || "Gagal mendaftar pengguna."
       }
-      setAuthError("Akun berhasil dibuat. Silakan masuk.")
-      return true
+      return "" // empty = sukses
     } catch (err) {
-      setAuthError("Gagal menghubungi server.")
-      return false
+      return "Gagal menghubungi server."
     }
   }
 
@@ -259,7 +256,6 @@ export default function App() {
     return (
       <Login
         onLogin={handleLogin}
-        onRegister={handleRegister}
         error={authError}
       />
     )
@@ -275,6 +271,7 @@ export default function App() {
         setActiveTab={setActiveTab}
         userEmail={currentUser}
         onLogout={handleLogout}
+        onRegister={handleRegister}
       />
 
       <main
