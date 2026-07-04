@@ -1,7 +1,8 @@
-import { ChevronLeft, ChevronRight, Edit2, Trash2 } from "lucide-react"
+import { Edit2, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { Asset } from "../types"
 import { formatIDR, formatDateID } from "../utils/assetHelpers"
+import ImageGalleryModal from "./ImageGalleryModal"
 
 interface AssetTableProps {
   assets: Asset[]
@@ -59,7 +60,13 @@ export default function AssetTable({
           ? [asset.receipt_url]
           : []
 
-    const [activeIndex, setActiveIndex] = useState(0)
+    const [galleryOpen, setGalleryOpen] = useState(false)
+
+    const openGallery = (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setGalleryOpen(true)
+    }
 
     if (imageUrls.length === 0) {
       return (
@@ -69,59 +76,32 @@ export default function AssetTable({
       )
     }
 
-    const currentUrl = imageUrls[activeIndex]
+    // Tampilkan HANYA gambar pertama
+    const currentUrl = imageUrls[0]
 
     return (
       <div className="w-full">
-        <div className={`relative overflow-hidden bg-zinc-900 ${compact ? "h-16 w-16" : "h-48 w-full"}`}>
-          <a href={currentUrl} target="_blank" rel="noopener noreferrer">
-            <img
-              src={currentUrl}
-              alt={`Gambar aset ${asset.name}`}
-              className={`w-full object-cover transition-opacity hover:opacity-90 ${compact ? "h-16" : "h-48"}`}
-            />
-          </a>
-
-          {imageUrls.length > 1 && (
-            <>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveIndex((prev) =>
-                    prev === 0 ? imageUrls.length - 1 : prev - 1,
-                  )
-                }
-                className="absolute left-1 top-1/2 -translate-y-1/2 rounded-none bg-black/70 p-1 text-white"
-              >
-                <ChevronLeft size={12} />
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveIndex((prev) => (prev + 1) % imageUrls.length)
-                }
-                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-none bg-black/70 p-1 text-white"
-              >
-                <ChevronRight size={12} />
-              </button>
-              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-none bg-black/70 px-2 py-0.5 text-[9px] font-semibold text-white">
-                {activeIndex + 1}/{imageUrls.length}
-              </div>
-            </>
-          )}
+        <div
+          className={`relative overflow-hidden bg-zinc-900 ${
+            compact ? "h-16 w-16 cursor-pointer" : "h-48 w-full cursor-pointer"
+          }`}
+          onClick={openGallery}
+        >
+          <img
+            src={currentUrl}
+            alt={`Gambar aset ${asset.name}`}
+            className={`w-full object-cover transition-opacity hover:opacity-90 ${
+              compact ? "h-16" : "h-48"
+            }`}
+          />
         </div>
 
-        {imageUrls.length > 1 && (
-          <div className="mt-2 flex flex-wrap justify-center gap-1">
-            {imageUrls.map((img, index) => (
-              <button
-                key={`${asset.id}-${img}`}
-                type="button"
-                onClick={() => setActiveIndex(index)}
-                className={`h-2 w-2 rounded-full ${index === activeIndex ? "bg-white" : "bg-zinc-700"}`}
-              />
-            ))}
-          </div>
+        {galleryOpen && (
+          <ImageGalleryModal
+            images={imageUrls}
+            assetName={asset.name}
+            onClose={() => setGalleryOpen(false)}
+          />
         )}
       </div>
     )
