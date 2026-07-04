@@ -219,6 +219,8 @@ export default function App() {
       localStorage.setItem("assetgrid_auth", "true")
       setIsAuthenticated(true)
       setCurrentUser(data.username)
+      setActiveTab("dashboard")
+      localStorage.setItem("assetgrid_tab", "dashboard")
       setAuthError(null)
       return true
     } catch (err) {

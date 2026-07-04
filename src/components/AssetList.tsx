@@ -94,13 +94,13 @@ export default function AssetList({
         <div className="flex gap-2 self-start sm:self-center">
           <button
             onClick={() => setIsPdfOpen(true)}
-            className="flex items-center gap-2 rounded-none border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-zinc-800 transition-all"
+            className="flex items-center gap-2 rounded-none border cursor-pointer border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-zinc-800 transition-all"
           >
             Ekspor PDF
           </button>
           <button
             onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-2 rounded-none border border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-zinc-800 transition-all"
+            className="flex items-center gap-2 rounded-none border cursor-pointer border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-zinc-800 transition-all"
           >
             <Plus size={16} />
             Tambah Aset

@@ -119,7 +119,7 @@ export default function Sidebar({
         <button
           id="toggle-sidebar"
           onClick={() => setIsOpen(!isOpen)}
-          className="rounded-none border border-zinc-800 bg-zinc-900 p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+          className="rounded-none border cursor-pointer border-zinc-800 bg-zinc-900 p-2 text-zinc-400 hover:bg-zinc-800 hover:text-white"
         >
           {isOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -174,7 +174,7 @@ export default function Sidebar({
           <button
             id="toggle-sidebar-collapse"
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`hidden md:flex items-center justify-center border border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white ${
+            className={`hidden cursor-pointer md:flex items-center justify-center border border-zinc-800 bg-zinc-900 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white ${
               isCollapsed
                 ? "h-8 w-8"
                 : "absolute right-3 top-1/2 h-7 w-7 -translate-y-1/2"
@@ -210,7 +210,7 @@ export default function Sidebar({
                 onClick={() => handleNav(item.id)}
                 title={isCollapsed ? item.label : undefined}
                 aria-label={item.label}
-                className={`flex w-full items-center rounded-none text-sm font-medium transition-all duration-200 ${
+                className={`flex w-full items-center rounded-none text-sm font-medium transition-all duration-200 cursor-pointer ${
                   isCollapsed
                     ? "justify-center px-2 py-3"
                     : "gap-3.5 px-3.5 py-3"
@@ -262,7 +262,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => setShowRegisterModal(true)}
-            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white ${
+            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-none border cursor-pointer border-zinc-800 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white ${
               isCollapsed ? "px-2 py-2" : ""
             }`}
             title={isCollapsed ? "Buat Akun Baru" : undefined}
@@ -274,7 +274,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={onLogout}
-            className={`mt-1 flex w-full items-center justify-center gap-2 rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white ${
+            className={`mt-1 flex w-full items-center justify-center gap-2 cursor-pointer rounded-none border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-300 transition hover:bg-zinc-800 hover:text-white ${
               isCollapsed ? "px-2 py-2" : ""
             }`}
           >
@@ -295,11 +295,13 @@ export default function Sidebar({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white">Buat Akun Baru</h2>
+              <h2 className="text-lg font-semibold text-white">
+                Buat Akun Baru
+              </h2>
               <button
                 type="button"
                 onClick={closeRegisterModal}
-                className="text-zinc-500 hover:text-white"
+                className="text-zinc-500 hover:text-white cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -360,9 +362,7 @@ export default function Sidebar({
                 />
               </div>
 
-              {regError && (
-                <p className="text-sm text-red-500">{regError}</p>
-              )}
+              {regError && <p className="text-sm text-red-500">{regError}</p>}
               {regSuccess && (
                 <p className="text-sm text-emerald-500">{regSuccess}</p>
               )}
@@ -370,7 +370,7 @@ export default function Sidebar({
               <button
                 type="submit"
                 disabled={regLoading}
-                className="w-full border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:opacity-50"
+                className="w-full border border-zinc-700 bg-zinc-800 px-4 py-2.5 cursor-pointer text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:opacity-50"
               >
                 {regLoading ? "Mendaftarkan..." : "Daftar"}
               </button>
