@@ -5,7 +5,7 @@ import { Asset, AssetCategory, AssetStatus } from "../types"
 const CATEGORIES: AssetCategory[] = [
   "Peralatan IT",
   "Furnitur",
-    "Alat Tulis Kantor",
+  "Alat Tulis Kantor",
   "Lainnya",
 ]
 const inputClass =
@@ -69,13 +69,13 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
     }
     onAdd(
       {
-      name: formName,
-      category: formCategory,
-      purchaseDate: formPurchaseDate,
-      price: Number(formPrice),
-      location: formLocation,
-      status: formStatus,
-      description: formDescription,
+        name: formName,
+        category: formCategory,
+        purchaseDate: formPurchaseDate,
+        price: Number(formPrice),
+        location: formLocation,
+        status: formStatus,
+        description: formDescription,
       },
       receiptFiles.length > 0 ? receiptFiles : null,
     )
@@ -136,6 +136,7 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
                 value={formStatus}
                 onChange={(e) => setFormStatus(e.target.value as AssetStatus)}
                 className={inputClass}
+                
               >
                 <option value="Tersedia">Tersedia</option>
                 <option value="Digunakan">Digunakan</option>
@@ -187,7 +188,7 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
             />
           </div>
           <div>
-            <label className={labelClass}>Bukti Pembelian (gambar) *</label>
+            <label className={labelClass}>Input Foto Asset & Receipt *</label>
             <input
               type="file"
               accept="image/*"

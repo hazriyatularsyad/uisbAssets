@@ -39,18 +39,22 @@ export default function EditAssetModal({
   )
   const [receiptFiles, setReceiptFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
-  const [existingImages, setExistingImages] = useState<string[]>(asset.images || [])
+  const [existingImages, setExistingImages] = useState<string[]>(
+    asset.images || [],
+  )
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
       const newFiles = Array.from(files)
-      const validFiles = newFiles.filter((file) => file.type.startsWith("image/"))
-      
+      const validFiles = newFiles.filter((file) =>
+        file.type.startsWith("image/"),
+      )
+
       if (validFiles.length > 0) {
         setReceiptFiles((prev) => [...prev, ...validFiles])
-        
+
         const previews = validFiles.map((file) => URL.createObjectURL(file))
         setImagePreviews((prev) => [...prev, ...previews])
       }
@@ -61,10 +65,10 @@ export default function EditAssetModal({
     const newFiles = [...receiptFiles]
     newFiles.splice(index, 1)
     setReceiptFiles(newFiles)
-    
+
     const preview = imagePreviews[index]
     if (preview) URL.revokeObjectURL(preview)
-    
+
     const newPreviews = [...imagePreviews]
     newPreviews.splice(index, 1)
     setImagePreviews(newPreviews)
@@ -113,7 +117,7 @@ export default function EditAssetModal({
       <div className="relative w-full max-w-lg rounded-none border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 rounded-none p-1.5 text-zinc-400 hover:bg-zinc-900 hover:text-white"
+          className="absolute top-4 right-4 rounded-none p-1.5 text-zinc-400 hover:bg-zinc-900 cursor-pointer hover:text-white"
         >
           <X size={16} />
         </button>
@@ -237,7 +241,7 @@ export default function EditAssetModal({
                     <button
                       type="button"
                       onClick={() => removeFile(index)}
-                      className="absolute top-1 right-1 bg-red-600 text-white rounded-none p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 bg-red-600 cursor-pointer text-white rounded-none p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X size={12} />
                     </button>
@@ -265,7 +269,7 @@ export default function EditAssetModal({
                       <button
                         type="button"
                         onClick={() => removeExistingImage(index)}
-                        className="absolute top-1 right-1 bg-red-600 text-white rounded-none p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-1 right-1 bg-red-600 text-white cursor-pointer rounded-none p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X size={12} />
                       </button>
@@ -279,13 +283,13 @@ export default function EditAssetModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-none border border-zinc-850 px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-900 hover:text-white"
+              className="rounded-none border border-zinc-850 px-4 py-2 text-xs cursor-pointer font-semibold text-zinc-400 hover:bg-zinc-900 hover:text-white"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="rounded-none bg-white px-4 py-2 text-xs font-bold text-black hover:bg-zinc-200"
+              className="rounded-none bg-white px-4 py-2 text-xs font-bold text-black cursor-pointer hover:bg-zinc-200"
             >
               Simpan Perubahan
             </button>

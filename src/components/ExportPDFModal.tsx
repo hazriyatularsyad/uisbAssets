@@ -1,4 +1,4 @@
-import { X } from "lucide-react"
+import { X, Calendar } from "lucide-react"
 import { useState } from "react"
 import { Asset } from "../types"
 
@@ -14,6 +14,8 @@ export default function ExportPDFModal({
   const [pdfSortKey, setPdfSortKey] = useState<
     "name" | "location" | "category"
   >("name")
+  const [startDate, setStartDate] = useState<string>("")
+  const [endDate, setEndDate] = useState<string>("")
 
   const handleExportPDF = async () => {
     const { default: jsPDF } = await import("jspdf")
@@ -21,7 +23,26 @@ export default function ExportPDFModal({
 
     const doc = new jsPDF({ orientation: "landscape" })
 
-    const sortedForPdf = [...assets].sort((a, b) =>
+    // Filter berdasarkan tanggal
+    let filteredAssets = [...assets]
+
+    if (startDate) {
+      filteredAssets = filteredAssets.filter((asset) => {
+        const purchaseDate = new Date(asset.purchaseDate)
+        return purchaseDate >= new Date(startDate)
+      })
+    }
+
+    if (endDate) {
+      filteredAssets = filteredAssets.filter((asset) => {
+        const purchaseDate = new Date(asset.purchaseDate)
+        const endDateObj = new Date(endDate)
+        endDateObj.setHours(23, 59, 59, 999) // Akhir hari
+        return purchaseDate <= endDateObj
+      })
+    }
+
+    const sortedForPdf = filteredAssets.sort((a, b) =>
       a[pdfSortKey].localeCompare(b[pdfSortKey]),
     )
 
@@ -31,16 +52,54 @@ export default function ExportPDFModal({
 
     doc.setFontSize(9)
     doc.setFont("helvetica", "normal")
-    doc.text(
-      `Diurutkan berdasarkan: ${pdfSortKey === "name" ? "Nama" : pdfSortKey === "location" ? "Lokasi" : "Kategori"}`,
-      14,
-      23,
-    )
-    doc.text(`Tanggal cetak: ${new Date().toLocaleDateString("id-ID")}`, 14, 29)
-    doc.text(`Total aset: ${sortedForPdf.length}`, 14, 35)
+
+    // Informasi filter tanggal
+    let dateFilterInfo = ""
+    if (startDate && endDate) {
+      const start = new Date(startDate).toLocaleDateString("id-ID")
+      const end = new Date(endDate).toLocaleDateString("id-ID")
+      dateFilterInfo = `Periode: ${start} - ${end}`
+    } else if (startDate) {
+      const start = new Date(startDate).toLocaleDateString("id-ID")
+      dateFilterInfo = `Mulai dari: ${start}`
+    } else if (endDate) {
+      const end = new Date(endDate).toLocaleDateString("id-ID")
+      dateFilterInfo = `Sampai dengan: ${end}`
+    }
+
+    const sortLabel =
+      pdfSortKey === "name"
+        ? "Nama"
+        : pdfSortKey === "location"
+          ? "Lokasi"
+          : "Kategori"
+
+    doc.text(`Diurutkan berdasarkan: ${sortLabel}`, 14, 23)
+
+    if (dateFilterInfo) {
+      doc.text(dateFilterInfo, 14, 28)
+      doc.text(
+        `Tanggal cetak: ${new Date().toLocaleDateString("id-ID")}`,
+        14,
+        33,
+      )
+      doc.text(`Total aset: ${sortedForPdf.length}`, 14, 38)
+    } else {
+      doc.text(
+        `Tanggal cetak: ${new Date().toLocaleDateString("id-ID")}`,
+        14,
+        28,
+      )
+      doc.text(`Total aset: ${sortedForPdf.length}`, 14, 33)
+    }
+
+    // Tentukan startY berdasarkan tinggi header
+    // Y=16 (judul) + 7 (jarak) + 5 (sortLabel) + (dateFilterInfo ? 15 : 10) = 38 atau 43
+    const headerHeight = dateFilterInfo ? 42 : 37
+    const startY = headerHeight + 5
 
     autoTable(doc, {
-      startY: 40,
+      startY,
       head: [
         [
           "No",
@@ -95,8 +154,88 @@ export default function ExportPDFModal({
         </button>
         <h3 className="text-lg font-bold text-white">Ekspor Laporan PDF</h3>
         <p className="text-xs text-zinc-500 mt-1">
-          Pilih urutan data dalam laporan
+          Pilih filter tanggal dan urutan data
         </p>
+
+        {/* Date Range Filter */}
+        <div className="mt-6 space-y-3">
+          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+            Filter tanggal pembelian:
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                htmlFor="export-start-date"
+                className="mb-1 block text-[10px] text-zinc-500"
+              >
+                Dari tanggal
+              </label>
+              <label
+                htmlFor="export-start-date"
+                className="relative block cursor-pointer"
+                onClick={(e) => {
+                  const input = e.currentTarget.querySelector("input")
+                  if (input && "showPicker" in input) {
+                    try {
+                      ;(input as any).showPicker()
+                    } catch (err) {
+                      console.warn(err)
+                    }
+                  }
+                }}
+              >
+                <input
+                  id="export-start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full cursor-pointer border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-zinc-600"
+                />
+              </label>
+            </div>
+            <div>
+              <label
+                htmlFor="export-end-date"
+                className="mb-1 block text-[10px] text-zinc-500"
+              >
+                Sampai tanggal
+              </label>
+              <label
+                htmlFor="export-end-date"
+                className="relative block cursor-pointer"
+                onClick={(e) => {
+                  const input = e.currentTarget.querySelector("input")
+                  if (input && "showPicker" in input) {
+                    try {
+                      ;(input as any).showPicker()
+                    } catch (err) {
+                      console.warn(err)
+                    }
+                  }
+                }}
+              >
+                <input
+                  id="export-end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full cursor-pointer border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-zinc-600"
+                />
+              </label>
+            </div>
+          </div>
+          {(startDate || endDate) && (
+            <button
+              onClick={() => {
+                setStartDate("")
+                setEndDate("")
+              }}
+              className="text-[10px] text-zinc-400 hover:text-white underline"
+            >
+              Reset filter tanggal
+            </button>
+          )}
+        </div>
 
         <div className="mt-6 space-y-3">
           <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">

@@ -44,10 +44,17 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [authError, setAuthError] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<string>("")
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem("sidebar_collapsed") === "true"
+  })
 
   useEffect(() => {
     localStorage.setItem("assetgrid_tab", activeTab)
   }, [activeTab])
+
+  useEffect(() => {
+    localStorage.setItem("sidebar_collapsed", String(sidebarCollapsed))
+  }, [sidebarCollapsed])
 
   useEffect(() => {
     const savedAuth = localStorage.getItem("assetgrid_auth")
@@ -274,25 +281,31 @@ export default function App() {
         userEmail={currentUser}
         onLogout={handleLogout}
         onRegister={handleRegister}
+        isCollapsed={sidebarCollapsed}
+        setIsCollapsed={setSidebarCollapsed}
       />
 
       <main
         id="main-content"
-        className="mx-auto flex-1 w-full max-w-7xl overflow-y-auto px-4 py-8 sm:px-6 md:px-8"
+        className={`flex-1 w-full overflow-y-auto px-4 py-8 sm:px-6 md:px-8 transition-all duration-300 ${
+          sidebarCollapsed ? "md:pl-[72px]" : "md:pl-64"
+        }`}
       >
-        {activeTab === "dashboard" ? (
-          <Dashboard
-            assets={assets}
-            onViewAllAssets={() => setActiveTab("assets")}
-          />
-        ) : (
-          <AssetList
-            assets={assets}
-            onAddAsset={handleAddAsset}
-            onEditAsset={handleEditAsset}
-            onDeleteAsset={handleDeleteAsset}
-          />
-        )}
+        <div className="mx-auto max-w-7xl">
+          {activeTab === "dashboard" ? (
+            <Dashboard
+              assets={assets}
+              onViewAllAssets={() => setActiveTab("assets")}
+            />
+          ) : (
+            <AssetList
+              assets={assets}
+              onAddAsset={handleAddAsset}
+              onEditAsset={handleEditAsset}
+              onDeleteAsset={handleDeleteAsset}
+            />
+          )}
+        </div>
       </main>
     </div>
   )

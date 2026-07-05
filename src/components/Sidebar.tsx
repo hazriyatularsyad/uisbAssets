@@ -19,6 +19,8 @@ interface SidebarProps {
   userEmail?: string
   onLogout?: () => void
   onRegister?: (username: string, password: string) => Promise<string>
+  isCollapsed?: boolean
+  setIsCollapsed?: (collapsed: boolean) => void
 }
 
 export default function Sidebar({
@@ -27,11 +29,17 @@ export default function Sidebar({
   userEmail = "admin@office",
   onLogout,
   onRegister,
+  isCollapsed: isCollapsedProp,
+  setIsCollapsed: setIsCollapsedProp,
 }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+  const [internalCollapsed, setInternalCollapsed] = useState(() => {
     return localStorage.getItem("sidebar_collapsed") === "true"
   })
+
+  // Use prop if provided, otherwise use internal state
+  const isCollapsed = isCollapsedProp ?? internalCollapsed
+  const setIsCollapsed = setIsCollapsedProp ?? setInternalCollapsed
 
   const [showRegisterModal, setShowRegisterModal] = useState(false)
   const [regUsername, setRegUsername] = useState("")
@@ -137,7 +145,7 @@ export default function Sidebar({
       {/* Sidebar Container */}
       <aside
         id="app-sidebar"
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-zinc-800 bg-zinc-950 text-zinc-300 transition-all duration-300 md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-zinc-800 bg-zinc-950 text-zinc-300 transition-all duration-300 md:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } ${isCollapsed ? "md:w-[72px]" : "w-64 md:w-64"}`}
       >
@@ -166,7 +174,7 @@ export default function Sidebar({
                 className="h-12 w-auto max-w-full object-contain"
               />
               <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
-                Sistem Manajemen Aset Kantor
+                Sistem Manajemen Aset
               </p>
             </>
           )}
@@ -235,7 +243,7 @@ export default function Sidebar({
         {/* Footer Profile */}
         <div
           id="sidebar-footer"
-          className={`border-t border-zinc-900 ${isCollapsed ? "p-2" : "p-4"}`}
+          className={`border-t border-zinc-900  ${isCollapsed ? "p-2" : "p-4"}`}
         >
           <div
             className={`flex items-center rounded-none border border-zinc-900 bg-zinc-900/30 ${

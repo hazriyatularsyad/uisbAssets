@@ -194,13 +194,13 @@ export default function AssetTable({
                 <div className="flex gap-2 pt-2 border-t border-zinc-900">
                   <button
                     onClick={() => onEdit(asset)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-zinc-400 border border-zinc-800 hover:bg-zinc-900 hover:text-white transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 text-xs cursor-pointer font-semibold text-zinc-400 border border-zinc-800 hover:bg-zinc-900 hover:text-white transition-all"
                   >
                     <Edit2 size={13} /> Edit
                   </button>
                   <button
                     onClick={() => onDelete(asset)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold text-zinc-400 border border-zinc-800 hover:bg-zinc-900 hover:text-red-400 transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 text-xs cursor-pointer font-semibold text-zinc-400 border border-zinc-800 hover:bg-zinc-900 hover:text-red-400 transition-all"
                   >
                     <Trash2 size={13} /> Hapus
                   </button>
