@@ -162,7 +162,13 @@ export default function AssetTable({
                       {formatIDR(asset.price)}
                     </p>
                   </div>
-                  <div className="col-span-2">
+                  <div>
+                    <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-0.5">
+                      Sumber Dana
+                    </p>
+                    <p className="text-zinc-300">{asset.source || "—"}</p>
+                  </div>
+                  <div>
                     <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-0.5">
                       Lokasi
                     </p>
@@ -245,6 +251,7 @@ export default function AssetTable({
                 >
                   Harga {sortIcon("price")}
                 </th>
+                <th className="py-4 px-4 hidden md:table-cell">Sumber</th>
                 <th
                   className="py-4 px-4 cursor-pointer select-none hover:text-white transition-colors"
                   onClick={() => onSort("location")}
@@ -281,6 +288,9 @@ export default function AssetTable({
                     </td>
                     <td className="py-4 px-4 text-zinc-300 hidden md:table-cell font-mono">
                       {formatIDR(asset.price)}
+                    </td>
+                    <td className="py-4 px-4 text-zinc-400 font-medium hidden md:table-cell">
+                      {asset.source || "—"}
                     </td>
                     <td className="py-4 px-4 text-zinc-400 font-medium">
                       {asset.location}

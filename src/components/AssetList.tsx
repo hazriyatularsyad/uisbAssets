@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react"
+import { Plus, Download } from "lucide-react"
 import { useState } from "react"
 import { Asset, AssetStatus } from "../types"
 import AssetFilters from "./AssetFilters"
@@ -7,6 +7,7 @@ import AddAssetModal from "./AddAssetModal"
 import EditAssetModal from "./EditAssetModal"
 import DeleteAssetModal from "./DeleteAssetModal"
 import ExportPDFModal from "./ExportPDFModal"
+import ImportAssetModal from "./ImportAssetModal"
 
 interface AssetListProps {
   assets: Asset[]
@@ -38,6 +39,7 @@ export default function AssetList({
   const [editAsset, setEditAsset] = useState<Asset | null>(null)
   const [deleteAsset, setDeleteAsset] = useState<Asset | null>(null)
   const [isPdfOpen, setIsPdfOpen] = useState(false)
+  const [isImportOpen, setIsImportOpen] = useState(false)
 
   const handleSort = (key: "name" | "purchaseDate" | "location" | "price") => {
     if (sortKey === key) {
@@ -92,6 +94,13 @@ export default function AssetList({
           </p>
         </div>
         <div className="flex gap-2 self-start sm:self-center">
+          <button
+            onClick={() => setIsImportOpen(true)}
+            className="flex items-center gap-2 rounded-none border cursor-pointer border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-zinc-800 transition-all"
+          >
+            <Download size={16} />
+            Import CSV
+          </button>
           <button
             onClick={() => setIsPdfOpen(true)}
             className="flex items-center gap-2 rounded-none border cursor-pointer border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-zinc-800 transition-all"
@@ -155,6 +164,17 @@ export default function AssetList({
         <ExportPDFModal
           assets={filteredAssets}
           onClose={() => setIsPdfOpen(false)}
+        />
+      )}
+      {isImportOpen && (
+        <ImportAssetModal
+          onImport={(importedAssets) => {
+            importedAssets.forEach((asset) => {
+              onAddAsset(asset)
+            })
+            setIsImportOpen(false)
+          }}
+          onClose={() => setIsImportOpen(false)}
         />
       )}
     </div>

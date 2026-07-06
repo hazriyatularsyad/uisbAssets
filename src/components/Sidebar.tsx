@@ -14,8 +14,8 @@ const LOGO_SRC = "/image/uisbLogo.png"
 const LOGO_ALT = "Universitas Islam Sumatera Barat"
 
 interface SidebarProps {
-  activeTab: "dashboard" | "assets"
-  setActiveTab: (tab: "dashboard" | "assets") => void
+  activeTab: "dashboard" | "assets" | "tracking"
+  setActiveTab: (tab: "dashboard" | "assets" | "tracking") => void
   userEmail?: string
   onLogout?: () => void
   onRegister?: (username: string, password: string) => Promise<string>
@@ -64,9 +64,14 @@ export default function Sidebar({
       label: "Manajemen Aset",
       icon: Box,
     },
+    {
+      id: "tracking" as const,
+      label: "Tracking Aset",
+      icon: Box,
+    },
   ]
 
-  const handleNav = (tab: "dashboard" | "assets") => {
+  const handleNav = (tab: "dashboard" | "assets" | "tracking") => {
     setActiveTab(tab)
     setIsOpen(false)
   }

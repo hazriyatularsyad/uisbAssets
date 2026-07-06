@@ -1,6 +1,6 @@
 import { X } from "lucide-react"
 import { useState, FormEvent, useRef } from "react"
-import { Asset, AssetCategory, AssetStatus } from "../types"
+import { Asset, AssetCategory, AssetStatus, AssetSource } from "../types"
 import { calculateAssetCondition } from "../utils/assetHelpers"
 
 const CATEGORIES: AssetCategory[] = [
@@ -10,6 +10,7 @@ const CATEGORIES: AssetCategory[] = [
   "Kendaraan",
   "Lainnya",
 ]
+const SOURCES: AssetSource[] = ["Hibah", "Yayasan", "Pemerintah"]
 const inputClass =
   "w-full rounded-none border border-zinc-900 bg-zinc-900/60 px-3 py-2 text-sm text-white outline-none focus:border-zinc-700"
 const labelClass =
@@ -34,6 +35,9 @@ export default function EditAssetModal({
   const [formPrice, setFormPrice] = useState<number>(asset.price)
   const [formLocation, setFormLocation] = useState(asset.location)
   const [formStatus, setFormStatus] = useState<AssetStatus>(asset.status)
+  const [formSource, setFormSource] = useState<AssetSource>(
+    asset.source || "Hibah",
+  )
   const [formDescription, setFormDescription] = useState(
     asset.description || "",
   )
@@ -99,6 +103,7 @@ export default function EditAssetModal({
         price: Number(formPrice),
         location: formLocation,
         status: formStatus,
+        source: formSource,
         condition: computedCondition,
         description: formDescription,
         images: existingImages,
@@ -171,10 +176,9 @@ export default function EditAssetModal({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClass}>Tanggal Beli *</label>
+              <label className={labelClass}>Tanggal Beli</label>
               <input
                 type="date"
-                required
                 value={formPurchaseDate}
                 onChange={(e) => setFormPurchaseDate(e.target.value)}
                 className={inputClass}
@@ -192,17 +196,33 @@ export default function EditAssetModal({
               />
             </div>
           </div>
-          <div>
-            <label className={labelClass}>
-              Lokasi Ruang / Penanggung Jawab *
-            </label>
-            <input
-              type="text"
-              required
-              value={formLocation}
-              onChange={(e) => setFormLocation(e.target.value)}
-              className={inputClass}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Sumber Dana</label>
+              <select
+                value={formSource}
+                onChange={(e) => setFormSource(e.target.value as AssetSource)}
+                className={inputClass}
+              >
+                {SOURCES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>
+                Lokasi Ruang / Penanggung Jawab *
+              </label>
+              <input
+                type="text"
+                required
+                value={formLocation}
+                onChange={(e) => setFormLocation(e.target.value)}
+                className={inputClass}
+              />
+            </div>
           </div>
           <div>
             <label className={labelClass}>Keterangan / Spesifikasi</label>

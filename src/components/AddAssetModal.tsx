@@ -1,6 +1,6 @@
 import { X } from "lucide-react"
 import { useState, FormEvent, ChangeEvent } from "react"
-import { Asset, AssetCategory, AssetStatus } from "../types"
+import { Asset, AssetCategory, AssetStatus, AssetSource } from "../types"
 
 const CATEGORIES: AssetCategory[] = [
   "Peralatan IT",
@@ -8,6 +8,7 @@ const CATEGORIES: AssetCategory[] = [
   "Alat Tulis Kantor",
   "Lainnya",
 ]
+const SOURCES: AssetSource[] = ["Hibah", "Yayasan", "Pemerintah"]
 const inputClass =
   "w-full rounded-none border border-zinc-900 bg-zinc-900/60 px-3 py-2 text-sm text-white outline-none focus:border-zinc-700"
 const labelClass =
@@ -31,6 +32,7 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
   const [formPrice, setFormPrice] = useState<number>(0)
   const [formLocation, setFormLocation] = useState("")
   const [formStatus, setFormStatus] = useState<AssetStatus>("Tersedia")
+  const [formSource, setFormSource] = useState<AssetSource>("Hibah")
   const [formDescription, setFormDescription] = useState("")
   const [receiptFiles, setReceiptFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -75,6 +77,7 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
         price: Number(formPrice),
         location: formLocation,
         status: formStatus,
+        source: formSource,
         description: formDescription,
       },
       receiptFiles.length > 0 ? receiptFiles : null,
@@ -166,17 +169,33 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
               />
             </div>
           </div>
-          <div>
-            <label className={labelClass}>
-              Lokasi Ruang / Penanggung Jawab *
-            </label>
-            <input
-              type="text"
-              required
-              value={formLocation}
-              onChange={(e) => setFormLocation(e.target.value)}
-              className={inputClass}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Sumber Dana</label>
+              <select
+                value={formSource}
+                onChange={(e) => setFormSource(e.target.value as AssetSource)}
+                className={inputClass}
+              >
+                {SOURCES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>
+                Lokasi Ruang / Penanggung Jawab *
+              </label>
+              <input
+                type="text"
+                required
+                value={formLocation}
+                onChange={(e) => setFormLocation(e.target.value)}
+                className={inputClass}
+              />
+            </div>
           </div>
           <div>
             <label className={labelClass}>Keterangan / Spesifikasi</label>

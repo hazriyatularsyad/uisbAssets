@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import Sidebar from "./components/Sidebar"
 import Dashboard from "./components/Dashboard"
 import AssetList from "./components/AssetList"
+import AssetTracking from "./components/AssetTracking"
 import Login from "./components/Login"
 import { Asset } from "./types"
 
@@ -35,10 +36,14 @@ const authFetch = async (url: string, options: RequestInit = {}) => {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "assets">(
+  const [activeTab, setActiveTab] = useState<
+    "dashboard" | "assets" | "tracking"
+  >(
     () =>
-      (localStorage.getItem("assetgrid_tab") as "dashboard" | "assets") ??
-      "dashboard",
+      (localStorage.getItem("assetgrid_tab") as
+        | "dashboard"
+        | "assets"
+        | "tracking") ?? "dashboard",
   )
   const [assets, setAssets] = useState<Asset[]>([])
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -297,13 +302,15 @@ export default function App() {
               assets={assets}
               onViewAllAssets={() => setActiveTab("assets")}
             />
-          ) : (
+          ) : activeTab === "assets" ? (
             <AssetList
               assets={assets}
               onAddAsset={handleAddAsset}
               onEditAsset={handleEditAsset}
               onDeleteAsset={handleDeleteAsset}
             />
+          ) : (
+            <AssetTracking assets={assets} />
           )}
         </div>
       </main>
