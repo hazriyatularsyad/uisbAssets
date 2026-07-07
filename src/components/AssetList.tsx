@@ -168,11 +168,10 @@ export default function AssetList({
       )}
       {isImportOpen && (
         <ImportAssetModal
-          onImport={(importedAssets) => {
-            importedAssets.forEach((asset) => {
-              onAddAsset(asset)
-            })
-            setIsImportOpen(false)
+          onImport={async (importedAssets) => {
+            for (const asset of importedAssets) {
+              await onAddAsset(asset)
+            }
           }}
           onClose={() => setIsImportOpen(false)}
         />

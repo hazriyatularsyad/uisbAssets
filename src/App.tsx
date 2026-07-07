@@ -123,7 +123,8 @@ export default function App() {
       newAssetData.purchaseDate,
       newAssetData.category,
     )
-    const id = `AST-${String(Date.now()).slice(-6)}`
+    const uniqueSuffix = Math.random().toString(36).substring(2, 6).toUpperCase()
+    const id = `AST-${String(Date.now()).slice(-6)}-${uniqueSuffix}`
     const toSave = { id, ...newAssetData, condition: computedCondition }
 
     try {
@@ -150,9 +151,11 @@ export default function App() {
         receipt_url: data.receiptUrl ?? null,
         images: data.images ?? (data.receiptUrl ? [data.receiptUrl] : []),
       }
-      const updated = [created, ...assets]
-      setAssets(updated)
-      localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
+      setAssets((prev) => {
+        const updated = [created, ...prev]
+        localStorage.setItem("assetgrid_assets", JSON.stringify(updated))
+        return updated
+      })
     } catch (err) {
       console.error("Gagal tambah ke PostgreSQL", err)
     }

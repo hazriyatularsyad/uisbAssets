@@ -29,10 +29,13 @@ export interface AssetLoan {
   assetId: string
   assetName: string
   borrowerName: string
-  borrowDate: string // YYYY-MM-DD
+  borrowDate: string
   loanLocation: string
   notes?: string
-  returnedAt?: string | null
+  returnedAt: string | null
+  returnedBy?: string
+  receivedBy?: string
+  returnDate?: string
 }
 
 export interface DashboardStats {

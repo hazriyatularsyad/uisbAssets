@@ -5,7 +5,7 @@ import { calculateAssetCondition } from "../utils/assetHelpers"
 import { generateCSVContent, downloadCSV } from "../utils/csvTemplate"
 
 interface ImportAssetModalProps {
-  onImport: (assets: Omit<Asset, "id" | "condition">[]) => void
+  onImport: (assets: Omit<Asset, "id" | "condition">[]) => void | Promise<void>
   onClose: () => void
 }
 
@@ -22,6 +22,16 @@ const REQUIRED_COLUMNS = [
   "Lokasi",
 ]
 
+const detectDelimiter = (headerLine: string): string => {
+  const commaCount = (headerLine.match(/,/g) || []).length
+  const semicolonCount = (headerLine.match(/;/g) || []).length
+  const tabCount = (headerLine.match(/\t/g) || []).length
+  
+  if (semicolonCount > commaCount && semicolonCount > tabCount) return ";"
+  if (tabCount > commaCount && tabCount > semicolonCount) return "\t"
+  return ","
+}
+
 export default function ImportAssetModal({
   onImport,
   onClose,
@@ -32,6 +42,7 @@ export default function ImportAssetModal({
     Omit<Asset, "id" | "condition">[]
   >([])
   const [step, setStep] = useState<"upload" | "preview">("upload")
+  const [isImporting, setIsImporting] = useState(false)
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({
     name: "Nama Barang",
     category: "Kategori",
@@ -53,8 +64,13 @@ export default function ImportAssetModal({
 
     reader.onload = (event) => {
       try {
-        const text = event.target?.result as string
-        const lines = text.split("\n").filter((line) => line.trim())
+        let text = event.target?.result as string
+        // Remove UTF-8 BOM if present
+        if (text.startsWith("\ufeff")) {
+          text = text.substring(1)
+        }
+        
+        const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
 
         if (lines.length < 2) {
           alert("File CSV harus memiliki header dan minimal 1 baris data")
@@ -62,6 +78,7 @@ export default function ImportAssetModal({
         }
 
         const headerLine = lines[0]
+        const delimiter = detectDelimiter(headerLine)
         let headers: string[] = []
         
         if (headerLine.includes('"')) {
@@ -71,7 +88,7 @@ export default function ImportAssetModal({
             const char = headerLine[i]
             if (char === '"') {
               inQuotes = !inQuotes
-            } else if (char === "," && !inQuotes) {
+            } else if (char === delimiter && !inQuotes) {
               headers.push(current.trim().replace(/^"|"$/g, ""))
               current = ""
             } else {
@@ -80,15 +97,16 @@ export default function ImportAssetModal({
           }
           headers.push(current.trim().replace(/^"|"$/g, ""))
         } else {
-          headers = headerLine.split(",").map((h) => h.trim())
+          headers = headerLine.split(delimiter).map((h) => h.trim())
         }
 
         console.log("=== CSV PARSING ===")
         console.log("Headers found:", headers)
         console.log("Total lines:", lines.length)
+        console.log("Detected delimiter:", delimiter)
 
         const missingColumns = REQUIRED_COLUMNS.filter(
-          (col) => !headers.includes(col),
+          (reqCol) => !headers.some((h) => h.toLowerCase() === reqCol.toLowerCase()),
         )
 
         if (missingColumns.length > 0) {
@@ -110,7 +128,7 @@ export default function ImportAssetModal({
             const char = line[i]
             if (char === '"') {
               inQuotes = !inQuotes
-            } else if (char === "," && !inQuotes) {
+            } else if (char === delimiter && !inQuotes) {
               values.push(current.trim().replace(/^"|"$/g, ""))
               current = ""
             } else {
@@ -132,16 +150,44 @@ export default function ImportAssetModal({
 
         setImportData(dataRows)
 
-        // Set mapping dengan kolom yang sudah valid
-        const autoMapping: Record<string, string> = {}
-        autoMapping["name"] = "Nama Barang"
-        autoMapping["category"] = "Kategori"
-        autoMapping["purchaseDate"] = "Tanggal Beli"
-        autoMapping["price"] = "Harga"
-        autoMapping["location"] = "Lokasi"
-        autoMapping["status"] = "Status"
-        autoMapping["source"] = "Sumber"
-        autoMapping["description"] = "Kondisi"
+        // Set mapping dengan fuzzy/case-insensitive matching
+        const findBestHeaderMatch = (fieldKey: string, defaultName: string) => {
+          if (headers.includes(defaultName)) return defaultName
+          
+          const found = headers.find((h) => h.toLowerCase() === defaultName.toLowerCase())
+          if (found) return found
+          
+          const lowerHeaders = headers.map((h) => h.toLowerCase())
+          const aliases: Record<string, string[]> = {
+            name: ["nama barang", "nama", "barang", "item", "name", "asset name"],
+            category: ["kategori", "category", "tipe", "type"],
+            purchaseDate: ["tanggal beli", "tanggal", "tgl beli", "date", "purchase date"],
+            price: ["harga", "price", "nilai", "cost"],
+            location: ["lokasi", "location", "tempat", "posisi"],
+            status: ["status", "keadaan"],
+            source: ["sumber", "source", "asal"],
+            description: ["kondisi", "keterangan", "deskripsi", "description", "condition"],
+          }
+          
+          const searchAliases = aliases[fieldKey] || []
+          for (const alias of searchAliases) {
+            const idx = lowerHeaders.findIndex((lh) => lh.includes(alias) || alias.includes(lh))
+            if (idx !== -1) return headers[idx]
+          }
+          
+          return ""
+        }
+
+        const autoMapping: Record<string, string> = {
+          name: findBestHeaderMatch("name", "Nama Barang"),
+          category: findBestHeaderMatch("category", "Kategori"),
+          purchaseDate: findBestHeaderMatch("purchaseDate", "Tanggal Beli"),
+          price: findBestHeaderMatch("price", "Harga"),
+          location: findBestHeaderMatch("location", "Lokasi"),
+          status: findBestHeaderMatch("status", "Status"),
+          source: findBestHeaderMatch("source", "Sumber"),
+          description: findBestHeaderMatch("description", "Kondisi"),
+        }
 
         console.log("File parsed successfully:")
         console.log("- Headers:", headers)
@@ -275,15 +321,22 @@ export default function ImportAssetModal({
     setMappedAssets(assets)
   }
 
-  const handleImport = (e: FormEvent) => {
+  const handleImport = async (e: FormEvent) => {
     e.preventDefault()
     if (mappedAssets.length === 0) {
       alert("Tidak ada aset untuk diimport")
       return
     }
 
-    onImport(mappedAssets)
-    onClose()
+    setIsImporting(true)
+    try {
+      await onImport(mappedAssets)
+      onClose()
+    } catch (err) {
+      alert("Gagal mengimport aset: " + String(err))
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   const labelClass =
@@ -295,12 +348,13 @@ export default function ImportAssetModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={() => !isImporting && onClose()}
       />
       <div className="relative w-full max-w-3xl rounded-none border border-zinc-800 bg-zinc-950 p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 rounded-none p-1.5 text-zinc-400 hover:bg-zinc-900 hover:text-white cursor-pointer"
+          disabled={isImporting}
+          className="absolute top-4 right-4 rounded-none p-1.5 text-zinc-400 hover:bg-zinc-900 hover:text-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <X size={16} />
         </button>
@@ -449,20 +503,31 @@ export default function ImportAssetModal({
             <div className="flex gap-3 pt-4">
               <button
                 type="button"
+                disabled={isImporting}
                 onClick={() => {
                   setStep("upload")
                   setMappedAssets([])
                 }}
-                className="flex-1 rounded-none border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer"
+                className="flex-1 rounded-none border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Kembali
               </button>
               <button
                 type="submit"
-                className="flex-1 flex items-center justify-center gap-2 rounded-none border border-zinc-800 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-zinc-100 transition cursor-pointer"
+                disabled={isImporting}
+                className="flex-1 flex items-center justify-center gap-2 rounded-none border border-zinc-800 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-zinc-100 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Upload size={14} />
-                Import {mappedAssets.length} Aset
+                {isImporting ? (
+                  <>
+                    <span className="h-3 w-3 animate-spin rounded-full border border-zinc-950 border-t-transparent" />
+                    Sedang Mengimport...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={14} />
+                    Import {mappedAssets.length} Aset
+                  </>
+                )}
               </button>
             </div>
           </form>

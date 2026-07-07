@@ -22,6 +22,11 @@ export default function AssetTracking({ assets }: AssetTrackingProps) {
   const [formLoanLocation, setFormLoanLocation] = useState("")
   const [formNotes, setFormNotes] = useState("")
   const [returnConfirmId, setReturnConfirmId] = useState<string | null>(null)
+  const [returnedBy, setReturnedBy] = useState("")
+  const [receivedBy, setReceivedBy] = useState("")
+  const [returnDate, setReturnDate] = useState(
+    new Date().toISOString().split("T")[0],
+  )
 
   const activeLloans = loans.filter((l) => !l.returnedAt)
   const returnedLoans = loans.filter((l) => l.returnedAt)
@@ -63,12 +68,28 @@ export default function AssetTracking({ assets }: AssetTrackingProps) {
   }
 
   const handleReturnAsset = (loanId: string) => {
+    if (!returnedBy || !receivedBy || !returnDate) {
+      alert("Harap isi semua kolom wajib!")
+      return
+    }
+
     const updated = loans.map((l) =>
-      l.id === loanId ? { ...l, returnedAt: new Date().toISOString() } : l,
+      l.id === loanId
+        ? {
+            ...l,
+            returnedAt: new Date().toISOString(),
+            returnedBy,
+            receivedBy,
+            returnDate,
+          }
+        : l,
     )
     setLoans(updated)
     localStorage.setItem("assetgrid_loans", JSON.stringify(updated))
     setReturnConfirmId(null)
+    setReturnedBy("")
+    setReceivedBy("")
+    setReturnDate(new Date().toISOString().split("T")[0])
   }
 
   const labelClass =
@@ -78,23 +99,23 @@ export default function AssetTracking({ assets }: AssetTrackingProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">
-            Tracking Aset
-          </h2>
-          <p className="text-sm text-zinc-400 mt-1">
-            Pantau aset yang sedang dipinjam dan lokasi terkini
-          </p>
-        </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 rounded-none border border-zinc-800 bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800 transition cursor-pointer"
-        >
-          <Plus size={16} />
-          Tambah Peminjaman
-        </button>
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <h2 className="text-lg md:text-2xl font-bold text-white tracking-tight">
+          Tracking Aset
+        </h2>
+        <p className="text-xs md:text-sm text-zinc-500 mt-1">
+          Kelola peminjaman dan pengembalian aset
+        </p>
       </div>
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="w-full md:w-auto flex items-center justify-center gap-2 px-3 md:px-4 py-2.5 text-xs md:text-sm font-semibold rounded-none border border-zinc-800 bg-white text-zinc-950 hover:bg-zinc-100 transition cursor-pointer"
+      >
+        <Plus size={16} />
+        Tambah Pinjaman
+      </button>
+    </div>
 
       {/* Add Loan Modal */}
       {showAddModal && (
@@ -202,66 +223,66 @@ export default function AssetTracking({ assets }: AssetTrackingProps) {
 
       {/* Active Loans */}
       <div>
-        <h3 className="text-lg font-semibold text-white mb-4 tracking-tight">
+        <h3 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4 tracking-tight">
           Aset Sedang Dipinjam ({activeLloans.length})
         </h3>
         {activeLloans.length === 0 ? (
-          <div className="rounded-none border border-zinc-800 bg-zinc-900/40 p-8 text-center text-zinc-500">
+          <div className="rounded-none border border-zinc-800 bg-zinc-900/40 p-4 md:p-8 text-center text-zinc-500 text-xs md:text-sm">
             Tidak ada aset yang sedang dipinjam
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-2 md:gap-4">
             {activeLloans.map((loan) => (
               <div
                 key={loan.id}
-                className="rounded-none border border-zinc-800 bg-zinc-900/40 p-4 space-y-3"
+                className="rounded-none border border-zinc-800 bg-zinc-900/40 p-3 md:p-4 space-y-2 md:space-y-3"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-white text-base">
+                <div className="flex items-start justify-between gap-2 md:gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-white text-sm md:text-base truncate">
                       {loan.assetName}
                     </h4>
                     <p className="text-[10px] text-zinc-500 font-mono">
                       {loan.assetId}
                     </p>
                   </div>
-                  <span className="inline-flex items-center px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider bg-blue-950/40 text-blue-400 border border-blue-900/50 rounded-none">
+                  <span className="inline-flex flex-shrink-0 items-center px-2 md:px-2.5 py-1 text-[9px] md:text-[10px] font-bold uppercase tracking-wider bg-blue-950/40 text-blue-400 border border-blue-900/50 rounded-none whitespace-nowrap">
                     Dipinjam
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-2 md:gap-4 text-xs md:text-sm">
                   <div>
-                    <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-1">
+                    <p className="text-[9px] md:text-[10px] text-zinc-600 uppercase tracking-wider mb-0.5 md:mb-1">
                       Nama Peminjam
                     </p>
-                    <p className="text-zinc-300">{loan.borrowerName}</p>
+                    <p className="text-zinc-300 text-xs md:text-sm">{loan.borrowerName}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-1">
+                    <p className="text-[9px] md:text-[10px] text-zinc-600 uppercase tracking-wider mb-0.5 md:mb-1">
                       Tanggal Pinjam
                     </p>
-                    <p className="text-zinc-300">
+                    <p className="text-zinc-300 text-xs md:text-sm">
                       {formatDateID(loan.borrowDate)}
                     </p>
                   </div>
-                  <div className="col-span-2">
-                    <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-1">
-                      Lokasi Saat Ini
-                    </p>
-                    <p className="text-zinc-300">{loan.loanLocation}</p>
-                  </div>
                   {loan.notes && (
                     <div className="col-span-2">
-                      <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-1">
+                      <p className="text-[9px] md:text-[10px] text-zinc-600 uppercase tracking-wider mb-0.5 md:mb-1">
                         Kebutuhan
                       </p>
-                      <p className="text-zinc-300">{loan.notes}</p>
+                      <p className="text-zinc-300 text-xs md:text-sm">{loan.notes}</p>
                     </div>
                   )}
+                  <div className="col-span-2">
+                    <p className="text-[9px] md:text-[10px] text-zinc-600 uppercase tracking-wider mb-0.5 md:mb-1">
+                      Lokasi Saat Ini
+                    </p>
+                    <p className="text-zinc-300 text-xs md:text-sm">{loan.loanLocation}</p>
+                  </div>
                 </div>
 
-                <div className="flex gap-2 pt-2 border-t border-zinc-800">
+                <div className="flex gap-2 pt-2 md:pt-3 border-t border-zinc-800">
                   <button
                     onClick={() => setReturnConfirmId(loan.id)}
                     className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-none border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-emerald-950/30 hover:text-emerald-400 hover:border-emerald-900/50 transition cursor-pointer"
@@ -272,13 +293,54 @@ export default function AssetTracking({ assets }: AssetTrackingProps) {
                 </div>
 
                 {returnConfirmId === loan.id && (
-                  <div className="rounded-none border border-emerald-900/50 bg-emerald-950/20 p-3 space-y-2">
-                    <p className="text-sm text-emerald-300">
-                      Konfirmasi pengembalian aset?
+                  <div className="rounded-none border border-emerald-900/50 bg-emerald-950/20 p-3 space-y-3">
+                    <p className="text-sm text-emerald-300 font-semibold">
+                      Konfirmasi Pengembalian Aset
                     </p>
-                    <div className="flex gap-2">
+                    
+                    <div>
+                      <label className={labelClass}>Nama yang Mengembalikan *</label>
+                      <input
+                        type="text"
+                        required
+                        value={returnedBy}
+                        onChange={(e) => setReturnedBy(e.target.value)}
+                        className={inputClass}
+                        placeholder="Nama orang yang mengembalikan aset"
+                      />
+                    </div>
+
+                    <div>
+                      <label className={labelClass}>Nama Penerima *</label>
+                      <input
+                        type="text"
+                        required
+                        value={receivedBy}
+                        onChange={(e) => setReceivedBy(e.target.value)}
+                        className={inputClass}
+                        placeholder="Nama orang yang menerima pengembalian"
+                      />
+                    </div>
+
+                    <div>
+                      <label className={labelClass}>Tanggal Pengembalian *</label>
+                      <input
+                        type="date"
+                        required
+                        value={returnDate}
+                        onChange={(e) => setReturnDate(e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
                       <button
-                        onClick={() => setReturnConfirmId(null)}
+                        onClick={() => {
+                          setReturnConfirmId(null)
+                          setReturnedBy("")
+                          setReceivedBy("")
+                          setReturnDate(new Date().toISOString().split("T")[0])
+                        }}
                         className="flex-1 py-2 text-xs font-semibold rounded-none border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 transition cursor-pointer"
                       >
                         Batal
@@ -297,6 +359,67 @@ export default function AssetTracking({ assets }: AssetTrackingProps) {
           </div>
         )}
       </div>
+
+      {/* Returned Loans History */}
+      {returnedLoans.length > 0 && (
+        <div>
+          <h3 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4 tracking-tight">
+            Riwayat Pengembalian ({returnedLoans.length})
+          </h3>
+          <div className="space-y-2 md:space-y-3">
+            {returnedLoans.map((loan, idx) => (
+              <div
+                key={loan.id}
+                className="rounded-none border border-zinc-800 bg-zinc-900/20 p-2 md:p-3 lg:p-4"
+              >
+                {/* Header dengan Nomor & Status */}
+                <div className="flex items-center justify-between gap-2 mb-2 md:mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-none bg-zinc-800 text-zinc-300 text-[9px] md:text-[10px] font-bold flex-shrink-0">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-white text-xs md:text-sm truncate">{loan.assetName}</p>
+                      <p className="text-[8px] md:text-[9px] text-zinc-500 font-mono truncate">{loan.assetId}</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center px-2 md:px-2.5 py-0.5 md:py-1 text-[8px] md:text-[9px] font-bold uppercase tracking-wider bg-emerald-950/40 text-emerald-400 border border-emerald-900/50 rounded-none whitespace-nowrap flex-shrink-0">
+                    Selesai
+                  </span>
+                </div>
+
+                {/* Content Grid - Semua data visible di semua breakpoint */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5 md:gap-2 lg:gap-3 text-[8px] md:text-[9px] lg:text-sm">
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wider font-semibold mb-0.5">Peminjam</p>
+                    <p className="text-zinc-300 text-xs truncate">{loan.borrowerName}</p>
+                  </div>
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wider font-semibold mb-0.5">Lokasi</p>
+                    <p className="text-zinc-300 text-xs truncate">{loan.loanLocation}</p>
+                  </div>
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wider font-semibold mb-0.5">Tgl Pinjam</p>
+                    <p className="text-zinc-300 text-xs">{formatDateID(loan.borrowDate)}</p>
+                  </div>
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wider font-semibold mb-0.5">Tgl Kembali</p>
+                    <p className="text-zinc-300 text-xs">{loan.returnDate ? formatDateID(loan.returnDate) : "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wider font-semibold mb-0.5">Kembali Oleh</p>
+                    <p className="text-zinc-300 text-xs truncate">{loan.returnedBy || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-zinc-600 uppercase tracking-wider font-semibold mb-0.5">Terima Oleh</p>
+                    <p className="text-zinc-300 text-xs truncate">{loan.receivedBy || "-"}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
