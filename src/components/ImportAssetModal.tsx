@@ -3,6 +3,11 @@ import { useState, FormEvent, ChangeEvent } from "react"
 import { Asset, AssetCategory, AssetStatus, AssetSource } from "../types"
 import { calculateAssetCondition } from "../utils/assetHelpers"
 import { generateCSVContent, downloadCSV } from "../utils/csvTemplate"
+import {
+  parseFile,
+  findBestHeaderMatch,
+  ImportedRow,
+} from "../utils/csvImportHelper"
 
 interface ImportAssetModalProps {
   onImport: (assets: Omit<Asset, "id" | "condition">[]) => void | Promise<void>
@@ -26,7 +31,7 @@ const detectDelimiter = (headerLine: string): string => {
   const commaCount = (headerLine.match(/,/g) || []).length
   const semicolonCount = (headerLine.match(/;/g) || []).length
   const tabCount = (headerLine.match(/\t/g) || []).length
-  
+
   if (semicolonCount > commaCount && semicolonCount > tabCount) return ";"
   if (tabCount > commaCount && tabCount > semicolonCount) return "\t"
   return ","
@@ -69,8 +74,11 @@ export default function ImportAssetModal({
         if (text.startsWith("\ufeff")) {
           text = text.substring(1)
         }
-        
-        const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+
+        const lines = text
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean)
 
         if (lines.length < 2) {
           alert("File CSV harus memiliki header dan minimal 1 baris data")
@@ -80,7 +88,7 @@ export default function ImportAssetModal({
         const headerLine = lines[0]
         const delimiter = detectDelimiter(headerLine)
         let headers: string[] = []
-        
+
         if (headerLine.includes('"')) {
           let current = ""
           let inQuotes = false
@@ -106,7 +114,8 @@ export default function ImportAssetModal({
         console.log("Detected delimiter:", delimiter)
 
         const missingColumns = REQUIRED_COLUMNS.filter(
-          (reqCol) => !headers.some((h) => h.toLowerCase() === reqCol.toLowerCase()),
+          (reqCol) =>
+            !headers.some((h) => h.toLowerCase() === reqCol.toLowerCase()),
         )
 
         if (missingColumns.length > 0) {
@@ -140,11 +149,11 @@ export default function ImportAssetModal({
           headers.forEach((header, idx) => {
             obj[header] = values[idx] || ""
           })
-          
+
           if (lineIdx < 2) {
             console.log(`Row ${lineIdx + 1}:`, obj)
           }
-          
+
           return obj
         })
 
@@ -153,28 +162,51 @@ export default function ImportAssetModal({
         // Set mapping dengan fuzzy/case-insensitive matching
         const findBestHeaderMatch = (fieldKey: string, defaultName: string) => {
           if (headers.includes(defaultName)) return defaultName
-          
-          const found = headers.find((h) => h.toLowerCase() === defaultName.toLowerCase())
+
+          const found = headers.find(
+            (h) => h.toLowerCase() === defaultName.toLowerCase(),
+          )
           if (found) return found
-          
+
           const lowerHeaders = headers.map((h) => h.toLowerCase())
           const aliases: Record<string, string[]> = {
-            name: ["nama barang", "nama", "barang", "item", "name", "asset name"],
+            name: [
+              "nama barang",
+              "nama",
+              "barang",
+              "item",
+              "name",
+              "asset name",
+            ],
             category: ["kategori", "category", "tipe", "type"],
-            purchaseDate: ["tanggal beli", "tanggal", "tgl beli", "date", "purchase date"],
+            purchaseDate: [
+              "tanggal beli",
+              "tanggal",
+              "tgl beli",
+              "date",
+              "purchase date",
+            ],
             price: ["harga", "price", "nilai", "cost"],
             location: ["lokasi", "location", "tempat", "posisi"],
             status: ["status", "keadaan"],
             source: ["sumber", "source", "asal"],
-            description: ["kondisi", "keterangan", "deskripsi", "description", "condition"],
+            description: [
+              "kondisi",
+              "keterangan",
+              "deskripsi",
+              "description",
+              "condition",
+            ],
           }
-          
+
           const searchAliases = aliases[fieldKey] || []
           for (const alias of searchAliases) {
-            const idx = lowerHeaders.findIndex((lh) => lh.includes(alias) || alias.includes(lh))
+            const idx = lowerHeaders.findIndex(
+              (lh) => lh.includes(alias) || alias.includes(lh),
+            )
             if (idx !== -1) return headers[idx]
           }
-          
+
           return ""
         }
 
@@ -205,7 +237,9 @@ export default function ImportAssetModal({
     reader.readAsText(file)
   }
 
-  const mapRowToAsset = (row: CSVRow): Omit<Asset, "id" | "condition"> | null => {
+  const mapRowToAsset = (
+    row: CSVRow,
+  ): Omit<Asset, "id" | "condition"> | null => {
     const getName = () => {
       const val = row[columnMapping.name]
       return val ? val.trim() : ""
@@ -312,9 +346,7 @@ export default function ImportAssetModal({
       const sampleRow = importData[0]
       const debugInfo = `Debug Info:\n\nData dimuat: ${importData.length} baris\n\nSample row:\n${JSON.stringify(sampleRow, null, 2)}\n\nColumn mapping:\n${JSON.stringify(columnMapping, null, 2)}\n\nChecking name: "${sampleRow[columnMapping.name] || "EMPTY"}"\nChecking location: "${sampleRow[columnMapping.location] || "EMPTY"}"`
 
-      alert(
-        `Tidak ada data yang valid untuk diimport.\n\n${debugInfo}`,
-      )
+      alert(`Tidak ada data yang valid untuk diimport.\n\n${debugInfo}`)
       return
     }
 
@@ -394,7 +426,8 @@ export default function ImportAssetModal({
                 </button>
               </div>
               <p className="text-[10px] text-zinc-500 mt-1">
-                Format: CSV atau Excel. Kolom wajib: Nama Barang, Kategori, Tanggal Beli, Harga, Sumber, Lokasi
+                Format: CSV atau Excel. Kolom wajib: Nama Barang, Kategori,
+                Tanggal Beli, Harga, Sumber, Lokasi
               </p>
             </div>
 
@@ -479,14 +512,18 @@ export default function ImportAssetModal({
                       <tr key={idx} className="hover:bg-zinc-900/20">
                         <td className="p-2 text-zinc-300">{asset.name}</td>
                         <td className="p-2 text-zinc-400">{asset.category}</td>
-                        <td className="p-2 text-zinc-400">{asset.purchaseDate}</td>
+                        <td className="p-2 text-zinc-400">
+                          {asset.purchaseDate}
+                        </td>
                         <td className="p-2 text-right font-mono text-zinc-300">
                           {asset.price.toLocaleString("id-ID")}
                         </td>
                         <td className="p-2 text-zinc-400">{asset.source}</td>
                         <td className="p-2 text-zinc-400">{asset.location}</td>
                         <td className="p-2 text-zinc-400">{asset.status}</td>
-                        <td className="p-2 text-zinc-400">{asset.description}</td>
+                        <td className="p-2 text-zinc-400">
+                          {asset.description}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

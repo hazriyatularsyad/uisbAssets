@@ -7,6 +7,9 @@ import {
   ChevronRight,
   LogOut,
   UserPlus,
+  Activity,
+  Layers,
+  ChartNoAxesCombined,
 } from "lucide-react"
 import { useEffect, useState, FormEvent } from "react"
 
@@ -56,18 +59,18 @@ export default function Sidebar({
   const menuItems = [
     {
       id: "dashboard" as const,
-      label: "Dasbor",
-      icon: LayoutDashboard,
+      label: "Dashboard",
+      icon: ChartNoAxesCombined,
     },
     {
       id: "assets" as const,
       label: "Manajemen Aset",
-      icon: Box,
+      icon: Layers,
     },
     {
       id: "tracking" as const,
       label: "Tracking Aset",
-      icon: Box,
+      icon: Activity,
     },
   ]
 
@@ -178,7 +181,7 @@ export default function Sidebar({
                 alt={LOGO_ALT}
                 className="h-12 w-auto max-w-full object-contain"
               />
-              <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
+              <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider mx-auto">
                 Sistem Manajemen Aset
               </p>
             </>

@@ -1,0 +1,21 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor">
+  <!-- Outer circle -->
+  <circle cx="100" cy="100" r="95" stroke-width="2" class="stroke-zinc-400"/>
+  
+  <!-- Target rings -->
+  <circle cx="100" cy="100" r="70" stroke-width="1.5" class="stroke-zinc-500"/>
+  <circle cx="100" cy="100" r="45" stroke-width="1.5" class="stroke-zinc-500"/>
+  
+  <!-- Center dot -->
+  <circle cx="100" cy="100" r="8" fill="currentColor" class="fill-white"/>
+  
+  <!-- Tracking lines (movement arrows) -->
+  <path d="M 100 30 L 100 20" stroke-width="2" stroke-linecap="round" class="stroke-white"/>
+  <path d="M 170 100 L 180 100" stroke-width="2" stroke-linecap="round" class="stroke-white"/>
+  <path d="M 100 170 L 100 180" stroke-width="2" stroke-linecap="round" class="stroke-white"/>
+  <path d="M 30 100 L 20 100" stroke-width="2" stroke-linecap="round" class="stroke-white"/>
+  
+  <!-- Diagonal tracking indicators -->
+  <path d="M 135 65 L 142 58" stroke-width="1.5" stroke-linecap="round" class="stroke-zinc-300"/>
+  <path d="M 65 135 L 58 142" stroke-width="1.5" stroke-linecap="round" class="stroke-zinc-300"/>
+</svg>
