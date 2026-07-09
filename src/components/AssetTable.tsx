@@ -352,21 +352,7 @@ export default function AssetTable({
         </div>
       </div>
 
-      {/* Info jumlah */}
-      <div className="flex items-center justify-between px-1 text-xs text-zinc-500">
-        <span>
-          Menampilkan{" "}
-          <span className="font-semibold text-zinc-300">{assets.length}</span>{" "}
-          dari{" "}
-          <span className="font-semibold text-zinc-300">{totalAssets}</span>{" "}
-          aset
-        </span>
-        {assets.length !== totalAssets && (
-          <span className="text-zinc-600">
-            (difilter dari total {totalAssets} aset)
-          </span>
-        )}
-      </div>
+
     </>
   )
 }

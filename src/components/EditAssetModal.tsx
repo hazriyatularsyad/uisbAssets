@@ -1,5 +1,5 @@
 import { X } from "lucide-react"
-import { useState, FormEvent, useRef } from "react"
+import { useState, FormEvent, useRef, useEffect } from "react"
 import { Asset, AssetCategory, AssetStatus, AssetSource } from "../types"
 import { calculateAssetCondition } from "../utils/assetHelpers"
 
@@ -111,7 +111,7 @@ export default function EditAssetModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto">
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}

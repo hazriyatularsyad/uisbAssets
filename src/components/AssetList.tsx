@@ -40,6 +40,8 @@ export default function AssetList({
   const [deleteAsset, setDeleteAsset] = useState<Asset | null>(null)
   const [isPdfOpen, setIsPdfOpen] = useState(false)
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const handleSort = (key: "name" | "purchaseDate" | "location" | "price") => {
     if (sortKey === key) {
@@ -50,7 +52,15 @@ export default function AssetList({
     }
   }
 
-  const filteredAssets = assets
+  const handleFilterChange = (
+    filterSetter: (value: any) => void,
+    value: any,
+  ) => {
+    filterSetter(value)
+    setCurrentPage(1)
+  }
+
+  const allFilteredAssets = assets
     .filter((asset) => {
       const matchesSearch =
         asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -76,6 +86,11 @@ export default function AssetList({
         ? valA.localeCompare(valB)
         : valB.localeCompare(valA)
     })
+
+  const totalPages = Math.ceil(allFilteredAssets.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const filteredAssets = allFilteredAssets.slice(startIndex, endIndex)
 
   return (
     <div id="assets-view" className="space-y-6 animate-fade-in">
@@ -120,9 +135,9 @@ export default function AssetList({
         searchQuery={searchQuery}
         selectedCategory={selectedCategory}
         selectedStatus={selectedStatus}
-        onSearchChange={setSearchQuery}
-        onCategoryChange={setSelectedCategory}
-        onStatusChange={setSelectedStatus}
+        onSearchChange={(query) => handleFilterChange(setSearchQuery, query)}
+        onCategoryChange={(cat) => handleFilterChange(setSelectedCategory, cat)}
+        onStatusChange={(status) => handleFilterChange(setSelectedStatus, status)}
       />
       <AssetTable
         assets={filteredAssets}
@@ -133,6 +148,40 @@ export default function AssetList({
         onEdit={setEditAsset}
         onDelete={setDeleteAsset}
       />
+
+      {/* Pagination Footer */}
+      {allFilteredAssets.length > itemsPerPage && (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1 py-4 border-t border-zinc-900">
+          <div className="text-xs text-zinc-500">
+            <span>
+              Halaman{" "}
+              <span className="font-semibold text-zinc-300">{currentPage}</span>{" "}
+              dari{" "}
+              <span className="font-semibold text-zinc-300">{totalPages}</span>
+            </span>
+            <span className="ml-4 text-zinc-600">
+              ({startIndex + 1}-{Math.min(endIndex, allFilteredAssets.length)} dari{" "}
+              {allFilteredAssets.length} aset)
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="rounded-none border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-bold text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Sebelumnya
+            </button>
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="rounded-none border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-bold text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Berikutnya
+            </button>
+          </div>
+        </div>
+      )}
 
       {isAddOpen && (
         <AddAssetModal

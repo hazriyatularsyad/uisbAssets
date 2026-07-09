@@ -107,7 +107,7 @@ export default function App() {
     return () => {
       mounted = false
     }
-  }, [])
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (assets.length > 0) {
