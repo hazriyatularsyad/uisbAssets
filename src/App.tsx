@@ -158,6 +158,7 @@ export default function App() {
       })
     } catch (err) {
       console.error("Gagal tambah ke PostgreSQL", err)
+      throw err
     }
   }
 

@@ -221,6 +221,7 @@ export default function ImportAssetModal({
           description: findBestHeaderMatch("description", "Kondisi"),
         }
 
+        // ✅ GANTI jadi ini
         console.log("File parsed successfully:")
         console.log("- Headers:", headers)
         console.log("- Data rows:", dataRows.length)
@@ -228,6 +229,65 @@ export default function ImportAssetModal({
         console.log("- Mapping:", autoMapping)
 
         setColumnMapping(autoMapping)
+
+        const assets = dataRows
+          .map((row) => {
+            const name = (row[autoMapping.name] || "").trim()
+            const location = (row[autoMapping.location] || "").trim()
+            if (!name || !location) return null
+
+            const categories: AssetCategory[] = [
+              "Peralatan IT",
+              "Furnitur",
+              "Alat Tulis Kantor",
+              "Kendaraan",
+              "Lainnya",
+            ]
+            const statuses: AssetStatus[] = ["Tersedia", "Digunakan", "Rusak"]
+            const sources: AssetSource[] = ["Hibah", "Yayasan", "Pemerintah"]
+
+            const catVal = (row[autoMapping.category] || "Lainnya").trim()
+            const category =
+              categories.find(
+                (c) => c.toLowerCase() === catVal.toLowerCase(),
+              ) || "Lainnya"
+
+            const statusVal = (row[autoMapping.status] || "Tersedia").trim()
+            const status =
+              statuses.find(
+                (s) => s.toLowerCase() === statusVal.toLowerCase(),
+              ) || "Tersedia"
+
+            const sourceVal = (row[autoMapping.source] || "Hibah").trim()
+            const source =
+              sources.find(
+                (s) => s.toLowerCase() === sourceVal.toLowerCase(),
+              ) || "Hibah"
+
+            const dateVal = row[autoMapping.purchaseDate]?.trim()
+            const parsed = dateVal ? new Date(dateVal) : null
+            const purchaseDate =
+              parsed && !isNaN(parsed.getTime())
+                ? parsed.toISOString().split("T")[0]
+                : new Date().toISOString().split("T")[0]
+
+            const priceVal = (row[autoMapping.price] || "0").trim()
+            const price = parseInt(priceVal.replace(/[^\d]/g, "")) || 0
+
+            return {
+              name,
+              category,
+              purchaseDate,
+              price,
+              location,
+              status,
+              source,
+              description: (row[autoMapping.description] || "").trim(),
+            } as Omit<Asset, "id" | "condition">
+          })
+          .filter((a) => a !== null) as Omit<Asset, "id" | "condition">[]
+
+        setMappedAssets(assets)
         setStep("preview")
       } catch (err) {
         alert("Gagal membaca file CSV: " + String(err))
@@ -351,6 +411,7 @@ export default function ImportAssetModal({
     }
 
     setMappedAssets(assets)
+    setStep("preview")
   }
 
   const handleImport = async (e: FormEvent) => {
@@ -377,7 +438,7 @@ export default function ImportAssetModal({
     "w-full rounded-none border border-zinc-900 bg-zinc-900/60 px-3 py-2 text-sm text-white outline-none focus:border-zinc-700"
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-25 overflow-y-auto ">
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => !isImporting && onClose()}

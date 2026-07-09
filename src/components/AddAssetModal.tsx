@@ -86,7 +86,7 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 mt-70">
+    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-4 overflow-y-auto">
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}

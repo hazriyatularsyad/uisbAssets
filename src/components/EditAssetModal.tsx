@@ -41,6 +41,7 @@ export default function EditAssetModal({
   const [formDescription, setFormDescription] = useState(
     asset.description || "",
   )
+  const [formCondition, setFormCondition] = useState<number>(asset.condition)
   const [receiptFiles, setReceiptFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [existingImages, setExistingImages] = useState<string[]>(
@@ -90,10 +91,6 @@ export default function EditAssetModal({
       alert("Harap isi semua kolom wajib!")
       return
     }
-    const computedCondition = calculateAssetCondition(
-      formPurchaseDate,
-      formCategory,
-    )
     onEdit(
       {
         ...asset,
@@ -104,7 +101,7 @@ export default function EditAssetModal({
         location: formLocation,
         status: formStatus,
         source: formSource,
-        condition: computedCondition,
+        condition: formCondition,
         description: formDescription,
         images: existingImages,
       },
@@ -114,12 +111,12 @@ export default function EditAssetModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-4 overflow-y-auto">
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-lg rounded-none border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
+      <div className="relative w-full max-w-2xl rounded-none border border-zinc-800 bg-zinc-950 p-6 shadow-2xl flex flex-col my-4">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 rounded-none p-1.5 text-zinc-400 hover:bg-zinc-900 cursor-pointer hover:text-white"
@@ -133,7 +130,7 @@ export default function EditAssetModal({
         <p className="text-xs text-zinc-500 mt-1">
           Ubah rincian informasi aset kantor di bawah ini.
         </p>
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label className={labelClass}>Nama Barang *</label>
             <input
@@ -172,6 +169,17 @@ export default function EditAssetModal({
                 <option value="Digunakan">Digunakan</option>
                 <option value="Rusak">Rusak</option>
               </select>
+            </div>
+            <div>
+              <label className={labelClass}>Kondisi (%)</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={formCondition}
+                onChange={(e) => setFormCondition(Number(e.target.value))}
+                className={`${inputClass} font-mono`}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -299,7 +307,7 @@ export default function EditAssetModal({
               </div>
             )}
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-900">
+          <div className="flex justify-end gap-3 pt-4 mt-auto border-t border-zinc-900 flex-shrink-0">
             <button
               type="button"
               onClick={onClose}
