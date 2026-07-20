@@ -2,11 +2,11 @@ import { Asset, AssetCategory } from '../types';
 
 // Lifespan in months for each category
 export const CATEGORY_LIFESPAN: Record<AssetCategory, number> = {
-  'Peralatan IT': 24, // 2 years
-  'Furnitur': 60,    // 5 years
-  'Alat Tulis Kantor': 6, // 1/2 years
-  'Kendaraan': 60, // 5 years
-  'Lainnya': 24 // 2 years
+  'Aset Bergerak': 24, // 2 years
+  'Aset Tetap': 60,    // 5 years
+  'Mobiler': 60, // 5 years
+  'Barang Elektronik': 6, // 1/2 years
+  'Alat Sarana dan Prasarana': 60, // 5 years
 };
 
 /**

@@ -3,12 +3,14 @@ import { useState, FormEvent, ChangeEvent } from "react"
 import { Asset, AssetCategory, AssetStatus, AssetSource } from "../types"
 
 const CATEGORIES: AssetCategory[] = [
-  "Peralatan IT",
-  "Furnitur",
-  "Alat Tulis Kantor",
-  "Lainnya",
+  "Aset Bergerak",
+  "Aset Tetap",
+  "Mobiler",
+  "Barang Elektronik",
+  "Alat Sarana dan Prasarana",
 ]
 const SOURCES: AssetSource[] = ["Hibah", "Yayasan", "Pemerintah"]
+const STATUS: AssetStatus[] = ["Baik", "Rusak Ringan", "Rusak Berat"]
 const inputClass =
   "w-full rounded-none border border-zinc-900 bg-zinc-900/60 px-3 py-2 text-sm text-white outline-none focus:border-zinc-700"
 const labelClass =
@@ -25,14 +27,14 @@ interface AddAssetModalProps {
 export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
   const [formName, setFormName] = useState("")
   const [formCategory, setFormCategory] =
-    useState<AssetCategory>("Peralatan IT")
+    useState<AssetCategory>("Alat Sarana dan Prasarana")
   const [formPurchaseDate, setFormPurchaseDate] = useState(
     new Date().toISOString().split("T")[0],
   )
   const [formPrice, setFormPrice] = useState<number>(0)
   const [formLocation, setFormLocation] = useState("")
-  const [formStatus, setFormStatus] = useState<AssetStatus>("Tersedia")
-  const [formSource, setFormSource] = useState<AssetSource>("Hibah")
+  const [formStatus, setFormStatus] = useState<AssetStatus>("Baik")
+  const [formSource, setFormSource] = useState<AssetSource>("Yayasan")
   const [formDescription, setFormDescription] = useState("")
   const [receiptFiles, setReceiptFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -141,9 +143,11 @@ export default function AddAssetModal({ onAdd, onClose }: AddAssetModalProps) {
                 className={inputClass}
                 
               >
-                <option value="Tersedia">Tersedia</option>
-                <option value="Digunakan">Digunakan</option>
-                <option value="Rusak">Rusak</option>
+                {STATUS.map((stat) => (
+                  <option key={stat} value={stat}>
+                    {stat}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

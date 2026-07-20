@@ -2,11 +2,14 @@ import { Search } from "lucide-react"
 import { AssetCategory, AssetStatus } from "../types"
 
 const CATEGORIES: AssetCategory[] = [
-  "Peralatan IT",
-  "Furnitur",
-  "Alat Tulis Kantor",
-  "Lainnya",
+  "Aset Bergerak",
+  "Aset Tetap",
+  "Mobiler",
+  "Barang Elektronik",
+  "Alat Sarana dan Prasarana",
 ]
+
+const STATUS: AssetStatus[] = ["Baik", "Rusak Ringan", "Rusak Berat"]
 
 interface AssetFiltersProps {
   searchQuery: string
@@ -66,7 +69,7 @@ export default function AssetFilters({
             Status:
           </span>
           <div className="flex flex-wrap gap-1.5">
-            {(["Semua", "Tersedia", "Digunakan", "Rusak"] as const).map(
+            {(["Semua", ...STATUS] as const).map(
               (stat) => (
                 <button
                   key={stat}

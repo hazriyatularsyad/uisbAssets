@@ -1,11 +1,11 @@
 export type AssetCategory =
-  | "Peralatan IT"
-  | "Furnitur"
-  | "Alat Tulis Kantor"
-  | "Kendaraan"
-  | "Lainnya"
+  | "Aset Bergerak"
+  | "Aset Tetap"
+  | "Mobiler"
+  | "Barang Elektronik"
+  | "Alat Sarana dan Prasarana"
 
-export type AssetStatus = "Tersedia" | "Digunakan" | "Rusak"
+export type AssetStatus = "Baik" | "Rusak Ringan" | "Rusak Berat"
 
 export type AssetSource = "Hibah" | "Yayasan" | "Pemerintah"
 

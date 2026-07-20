@@ -27,10 +27,10 @@ export default function AssetTable({
     sortKey === key ? (sortOrder === "asc" ? "↑" : "↓") : "↕"
 
   const statusClass = (status: string) => {
-    if (status === "Tersedia")
+    if (status === "Baik")
       return "bg-emerald-950/40 text-emerald-400 border border-emerald-900/50"
-    if (status === "Digunakan")
-      return "bg-blue-950/40 text-blue-400 border border-blue-900/50"
+    if (status === "Rusak Ringan")
+      return "bg-yellow-950/40 text-yellow-400 border border-yellow-900/50"
     return "bg-red-950/40 text-red-400 border border-red-900/50"
   }
 
