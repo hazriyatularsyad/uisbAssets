@@ -147,26 +147,34 @@ app.get("/test-image", (_, res) => {
 
 // ensure asset schema exists for upload metadata
 ;(async () => {
-  try {
-    await pool.query(
-      "ALTER TABLE assets ADD COLUMN IF NOT EXISTS receipt_url TEXT",
-    )
-    await pool.query(
-      "ALTER TABLE assets ADD COLUMN IF NOT EXISTS images JSONB",
-    )
-    await pool.query(`
-      UPDATE assets
-      SET images = CASE
-        WHEN receipt_url IS NULL THEN '[]'::jsonb
-        WHEN receipt_url LIKE '[' THEN receipt_url::jsonb
-        ELSE jsonb_build_array(receipt_url)
-      END
-      WHERE images IS NULL
-    `)
-    console.log("✅ Asset schema migration completed")
-  } catch (err) {
-    console.warn("Failed to ensure asset schema:", err)
-  }
+try {
+  await pool.query(
+    "ALTER TABLE assets ADD COLUMN IF NOT EXISTS receipt_url TEXT",
+  )
+  await pool.query(
+    "ALTER TABLE assets ADD COLUMN IF NOT EXISTS images JSONB",
+  )
+  await pool.query(
+    "ALTER TABLE assets ADD COLUMN IF NOT EXISTS source TEXT",
+  )
+  await pool.query(`
+    UPDATE assets
+    SET images = CASE
+      WHEN receipt_url IS NULL THEN '[]'::jsonb
+      WHEN receipt_url LIKE '[' THEN receipt_url::jsonb
+      ELSE jsonb_build_array(receipt_url)
+    END
+    WHERE images IS NULL
+  `)
+  await pool.query(`
+    UPDATE assets
+    SET source = 'Hibah'
+    WHERE source IS NULL
+  `)
+  console.log("✅ Asset schema migration completed")
+} catch (err) {
+  console.warn("Failed to ensure asset schema:", err)
+}
 })()
 
 // ==================== MIDDLEWARE AUTH ====================
@@ -246,21 +254,22 @@ app.get("/api/assets", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM assets ORDER BY name ASC")
     const assets = result.rows.map((row) => {
-      const imageUrls = normalizeImageUrls(row.images ?? row.receipt_url)
-      const receiptUrl = imageUrls[0] || null
-      return {
-        id: row.id,
-        name: row.name,
-        category: row.category,
-        purchaseDate: row.purchase_date,
-        price: row.price,
-        location: row.location,
-        status: row.status,
-        condition: row.condition,
-        receipt_url: receiptUrl,
-        images: imageUrls,
-        description: row.description,
-      }
+    const imageUrls = normalizeImageUrls(row.images ?? row.receipt_url)
+    const receiptUrl = imageUrls[0] || null
+    return {
+      id: row.id,
+      name: row.name,
+      category: row.category,
+      purchaseDate: row.purchase_date,
+      price: row.price,
+      location: row.location,
+      status: row.status,
+      condition: row.condition,
+      receipt_url: receiptUrl,
+      images: imageUrls,
+      description: row.description,
+      source: row.source,
+    }
     })
     res.json(assets)
   } catch (err) {
@@ -289,12 +298,13 @@ app.post(
         status,
         condition,
         description,
+        source,
       } = req.body
       const uploadedUrls = files.map((file) => getPublicReceiptUrl(req, file))
       const imageUrls = uploadedUrls.length > 0 ? uploadedUrls : []
       const receiptValue = buildReceiptValue(imageUrls)
       await pool.query(
-        "INSERT INTO assets (id, name, category, purchase_date, price, location, status, condition, description, receipt_url, images) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
+        "INSERT INTO assets (id, name, category, purchase_date, price, location, status, condition, description, receipt_url, images, source) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
         [
           id,
           name,
@@ -307,6 +317,7 @@ app.post(
           description,
           receiptValue,
           JSON.stringify(imageUrls),
+          source || "Hibah",
         ],
       )
       res.json({ id, receiptUrl: imageUrls[0] || null, images: imageUrls })
@@ -339,6 +350,7 @@ app.put(
         condition,
         description,
         images,
+        source,
       } = req.body
       const existingImages = normalizeImageUrls(images)
       const uploadedUrls = files.map((file) => getPublicReceiptUrl(req, file))
@@ -353,16 +365,17 @@ app.put(
         status,
         condition,
         description,
+        source || "Hibah",
       ]
       let query =
-        "UPDATE assets SET name=$1, category=$2, purchase_date=$3, price=$4, location=$5, status=$6, condition=$7, description=$8"
+        "UPDATE assets SET name=$1, category=$2, purchase_date=$3, price=$4, location=$5, status=$6, condition=$7, description=$8, source=$9"
       const params: any[] = [...fields, id]
       if (receiptValue) {
-        query += ", receipt_url=$9, images=$10"
-        params.splice(8, 0, receiptValue, JSON.stringify(finalImages))
+        query += ", receipt_url=$10, images=$11"
+        params.splice(9, 0, receiptValue, JSON.stringify(finalImages))
       } else {
-        query += ", images=$9"
-        params.splice(8, 0, JSON.stringify(finalImages))
+        query += ", images=$10"
+        params.splice(9, 0, JSON.stringify(finalImages))
       }
       query += " WHERE id=$" + params.length
       await pool.query(query, params)
