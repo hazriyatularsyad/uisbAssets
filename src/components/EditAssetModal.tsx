@@ -11,6 +11,7 @@ const CATEGORIES: AssetCategory[] = [
   "Alat Sarana dan Prasarana",
 ]
 const SOURCES: AssetSource[] = ["Hibah", "Yayasan", "Pemerintah"]
+const STATUS: AssetStatus[] = ["Baik", "Rusak Ringan", "Rusak Berat"]
 const inputClass =
   "w-full rounded-none border border-zinc-900 bg-zinc-900/60 px-3 py-2 text-sm text-white outline-none focus:border-zinc-700"
 const labelClass =
@@ -165,9 +166,14 @@ export default function EditAssetModal({
                 onChange={(e) => setFormStatus(e.target.value as AssetStatus)}
                 className={inputClass}
               >
-                <option value="Tersedia">Tersedia</option>
+                {/* <option value="Tersedia">Tersedia</option>
                 <option value="Digunakan">Digunakan</option>
-                <option value="Rusak">Rusak</option>
+                <option value="Rusak">Rusak</option> */}
+                {STATUS.map((stat) => (
+                  <option key={stat} value={stat}>
+                    {stat}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
