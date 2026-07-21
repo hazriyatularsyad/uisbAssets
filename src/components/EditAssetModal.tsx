@@ -4,11 +4,11 @@ import { Asset, AssetCategory, AssetStatus, AssetSource } from "../types"
 import { calculateAssetCondition } from "../utils/assetHelpers"
 
 const CATEGORIES: AssetCategory[] = [
-  "Peralatan IT",
-  "Furnitur",
-  "Alat Tulis Kantor",
-  "Kendaraan",
-  "Lainnya",
+   "Aset Bergerak",
+  "Aset Tetap",
+  "Mobiler",
+  "Barang Elektronik",
+  "Alat Sarana dan Prasarana",
 ]
 const SOURCES: AssetSource[] = ["Hibah", "Yayasan", "Pemerintah"]
 const inputClass =
